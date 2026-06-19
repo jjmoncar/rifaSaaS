@@ -1,10 +1,9 @@
 {
-  "projectId": "valued-memento-f224x",
-  "appId": "1:973778646517:web:fd0893347f0e90895a1cbc",
-  "apiKey": "AIzaSyBkgtVYiMOg-BTSriyMVJpUaBdc_Ob0JcQ",
-  "authDomain": "valued-memento-f224x.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-58be9ba3-0726-4848-823b-19274dad827d",
-  "storageBucket": "valued-memento-f224x.firebasestorage.app",
-  "messagingSenderId": "973778646517",
-  "measurementId": ""
+  "projectId": "rifasaas",
+  "appId": "1:1049572587685:web:f064ab38ea786aae38754c",
+  "apiKey": "AIzaSyDbJaUnHHn3FhLSWCPDShGeTgpLAB5kYsU",
+  "authDomain": "rifasaas.firebaseapp.com",
+  "storageBucket": "rifasaas.firebasestorage.app",
+  "messagingSenderId": "1049572587685",
+  "measurementId": "G-KWG2S67EN0"
 }
