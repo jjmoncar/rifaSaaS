@@ -150,7 +150,7 @@ export default function AuthModal({
         if (userDocSnap.exists()) {
           const data = userDocSnap.data();
           profileData = {
-            name: data.name || user.displayName || 'Alex Johnson',
+            name: data.name || user.displayName || 'Usuario',
             email: user.email || email,
             avatar: data.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.uid)}`,
             tier: data.tier || 'Free',
@@ -160,7 +160,7 @@ export default function AuthModal({
         } else {
           // Fallback if auth exists but no firestore document
           profileData = {
-            name: user.displayName || 'Alex Johnson',
+            name: user.displayName || 'Usuario',
             email: user.email || email,
             avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.uid)}`,
             tier: 'Free',
@@ -242,24 +242,6 @@ export default function AuthModal({
       setErrorMsg(friendlyError);
       setLoading(false);
     }
-  };
-
-  // Demo user trigger to test instantly without database lock
-  const handleDemoAccess = () => {
-    setLoading(true);
-    const demoProfile: UserProfile = {
-      name: 'Alex Johnson (Simulado)',
-      email: 'alex@example.com',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256',
-      tier: 'Pro',
-      rafflesJoinedCount: 3,
-      ticketsPurchasedCount: 5
-    };
-    setTimeout(() => {
-      onAuthSuccess(demoProfile, false);
-      onClose();
-      setLoading(false);
-    }, 600);
   };
 
   return (
@@ -461,28 +443,6 @@ export default function AuthModal({
             )}
           </button>
         </form>
-
-        {/* Separator line */}
-        <div className="relative my-6 flex items-center justify-center">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-150" />
-          </div>
-          <span className="relative px-3 bg-white text-gray-400 text-[10px] tracking-wider uppercase font-medium">
-            {currentLanguage === 'es' ? 'O BIEN' : currentLanguage === 'pt' ? 'OU ENTÃO' : 'OR'}
-          </span>
-        </div>
-
-        {/* Demo Fast Access Button */}
-        <button
-          id="auth-demo-btn"
-          type="button"
-          disabled={loading}
-          onClick={handleDemoAccess}
-          className="w-full py-2.5 px-4 bg-gray-50 text-gray-700 font-semibold text-xs rounded-lg border border-gray-250 hover:bg-gray-100 transition-colors flex flex-col items-center justify-center hover:shadow-xs active:scale-98 cursor-pointer disabled:opacity-50"
-        >
-          <span className="text-gray-900 font-bold">{currentT.demoAccountBtn}</span>
-          <span className="text-[10px] text-gray-500 font-normal mt-0.5">{currentT.demoSubText}</span>
-        </button>
 
         {/* Switch Link toggle */}
         <div className="text-center mt-6">

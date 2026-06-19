@@ -17,85 +17,9 @@ import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import AuthModal from './components/AuthModal';
 
-// Preset raffle models for high fidelity demonstration
-const INITIAL_RAFFLES: Raffle[] = [
-  {
-    id: 'tesla-model-y',
-    name: 'Tesla Model Y Grand Finale',
-    description: 'Get behind the wheel of the world\'s best-selling electric SUV equipped with a premium sound system, autopilot capability, and metallic midnight silver paint.',
-    coverImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBBJnc9KIN_auLYgcud0dQfnj3F9JtlXaBlDtSm_4HQ5jL3xfnANlDJb5A5YW-6p9RMDgxYGXY2t7Lsmt5LRkQBZUgF54Nj3JYLeRqTJMA98rsGb0VgbB0aFTftMY8qmSkvG5vv9fak44SYHDln7kN-yMRwMlwn5S7Yub9l6Epwgtm8jkdw9gKuUGRjG7a_whgmAgFV2UhHpBYkPVeHafrfn0FISpk5lTmV1sYDR4LH_Rn_i0ZJ6LJLTy1fe6KzVZnDDchkUenKr5TQ',
-    totalTickets: 100,
-    ticketPrice: 10.00,
-    currency: 'USD',
-    soldTickets: [3, 14, 25, 41, 56, 72, 89],
-    reservedTickets: [5],
-    purchases: [
-      { ticketNumber: '003', buyerName: 'Alex Johnson', buyerEmail: 'alex@example.com', timestamp: '2 hours ago', paymentMethod: 'Credit Card (Simulated)', status: 'Successful', amount: 10.00, currency: 'USD', raffle: 'Tesla Model Y Grand Finale' },
-      { ticketNumber: '014', buyerName: 'Mia Silva', buyerEmail: 'mia@example.com', timestamp: '5 hours ago', paymentMethod: 'Credit Card (Simulated)', status: 'Successful', amount: 10.00, currency: 'USD', raffle: 'Tesla Model Y Grand Finale' },
-      { ticketNumber: '025', buyerName: 'Alex Johnson', buyerEmail: 'alex@example.com', timestamp: '1 day ago', paymentMethod: 'Credit Card (Simulated)', status: 'Successful', amount: 10.00, currency: 'USD', raffle: 'Tesla Model Y Grand Finale' },
-      { ticketNumber: '041', buyerName: 'Lucas Cruz', buyerEmail: 'lucas@gmail.com', timestamp: '1 day ago', paymentMethod: 'Credit Card (Simulated)', status: 'Successful', amount: 10.00, currency: 'USD', raffle: 'Tesla Model Y Grand Finale' },
-      { ticketNumber: '056', buyerName: 'Elena Rostova', buyerEmail: 'elena@ru.com', timestamp: '2 days ago', paymentMethod: 'Credit Card (Simulated)', status: 'Successful', amount: 10.00, currency: 'USD', raffle: 'Tesla Model Y Grand Finale' },
-      { ticketNumber: '072', buyerName: 'Joe Smith', buyerEmail: 'joe@yahoo.com', timestamp: '2 days ago', paymentMethod: 'Credit Card (Simulated)', status: 'Successful', amount: 10.00, currency: 'USD', raffle: 'Tesla Model Y Grand Finale' },
-      { ticketNumber: '089', buyerName: 'Carlos G', buyerEmail: 'carlos@mx.com', timestamp: '3 days ago', paymentMethod: 'Credit Card (Simulated)', status: 'Successful', amount: 10.00, currency: 'USD', raffle: 'Tesla Model Y Grand Finale' }
-    ],
-    status: 'active',
-    drawMethod: 'Automatic',
-    subdomain: 'tesla-y',
-    startDate: '2026-06-15T12:00',
-    drawDate: '2026-06-30T18:00'
-  },
-  {
-    id: 'luxury-villa',
-    name: 'Luxury Beachfront Villa',
-    description: 'A 5-day fully funded escape to an architectural masterpiece in Angra dos Reis, featuring a private infinity pool, direct beach access, gourmet kitchen & private speedboat tour.',
-    coverImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB2CwsEqCD-MYPpAnIh4sag2a4IWbng3tHKquQrtUdHNBjvCQ3rL2FDwK02XjagcoXYz_CGPP-_KiMsF8s22T-cXatN35XPIoukvc8f8bZ20z7nKYcJTy0LMFIQXezC8ppt6aCa3eJ_VaN3EtGDCiKX2ThK0Ro8IHukxjEiyWyDxtgAvvKjAqHL55CM1kRE-wDW_rHLIDPXRIJCLpfBXkipXge0nrTOZYBytz1bUTXZGEGF8qt4R-Zjqyiafh_adMKp3vJfd4ecv5Aj',
-    totalTickets: 200,
-    ticketPrice: 50.00,
-    currency: 'BRL',
-    soldTickets: [12, 45, 91, 155],
-    reservedTickets: [27],
-    purchases: [
-      { ticketNumber: '012', buyerName: 'Alex Johnson', buyerEmail: 'alex@example.com', timestamp: '4 hours ago', paymentMethod: 'Pix (Brazilian Instant)', status: 'Successful', amount: 50.00, currency: 'BRL', raffle: 'Luxury Beachfront Villa' },
-      { ticketNumber: '045', buyerName: 'Bruno Alencar', buyerEmail: 'bruno@br.com', timestamp: '10 hours ago', paymentMethod: 'Pix (Brazilian Instant)', status: 'Successful', amount: 50.00, currency: 'BRL', raffle: 'Luxury Beachfront Villa' },
-      { ticketNumber: '091', buyerName: 'Camila Santos', buyerEmail: 'camila@br.com', timestamp: '1 day ago', paymentMethod: 'Pix (Brazilian Instant)', status: 'Successful', amount: 50.00, currency: 'BRL', raffle: 'Luxury Beachfront Villa' },
-      { ticketNumber: '155', buyerName: 'Alex Johnson', buyerEmail: 'alex@example.com', timestamp: '2 days ago', paymentMethod: 'Pix (Brazilian Instant)', status: 'Successful', amount: 50.00, currency: 'BRL', raffle: 'Luxury Beachfront Villa' }
-    ],
-    status: 'active',
-    drawMethod: 'Automatic',
-    subdomain: 'angra-paraiso',
-    startDate: '2026-06-18T08:00',
-    drawDate: '2026-06-28T20:00'
-  },
-  {
-    id: 'iphone-15-pro',
-    name: 'iPhone 15 Pro Titanium Giveaway',
-    description: 'Experience Apple\'s ultimate aerospace‑grade titanium build featuring the breakthrough A17 Pro chip, custom Action button, and the strongest camera system in an iPhone yet.',
-    coverImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDdw-PtwK5GjKBTHZPc4cOkHOzFbRmoyr1hCpKblgFEl1H_K3YpqE1PpnY7Dk26BFmEv4zDjlmtF94AqvU4ifkw6S1xK9s4EgoiWEk7-6dLo2SSJO4WAB4JzEQT3ly_z6yxo35nvFRwQhRLus5LTc7np_V0rZXwJtGFalaW2QbeByZ64Bst2eqCFkjgJvzoepU1VJauSx8irkkmNm5H_byH_YyNLmwZYtX7sPS5ydUdmAjxWDIMkg2qXxVWB5C-SsRNRmvq0k8Guamy',
-    totalTickets: 100,
-    ticketPrice: 5.00,
-    currency: 'Pi',
-    soldTickets: [5, 18, 55, 67, 88],
-    reservedTickets: [],
-    purchases: [
-      { ticketNumber: '005', buyerName: 'Alex Johnson', buyerEmail: 'alex@example.com', timestamp: '1 hour ago', paymentMethod: 'Pi Net Wallet', status: 'Successful', amount: 5.00, currency: 'Pi', raffle: 'iPhone 15 Pro Titanium Giveaway' },
-      { ticketNumber: '018', buyerName: 'Nico Pi', buyerEmail: 'nico@pinet.org', timestamp: '5 hours ago', paymentMethod: 'Pi Net Wallet', status: 'Successful', amount: 5.00, currency: 'Pi', raffle: 'iPhone 15 Pro Titanium Giveaway' },
-      { ticketNumber: '055', buyerName: 'Alex Johnson', buyerEmail: 'alex@example.com', timestamp: '1 day ago', paymentMethod: 'Pi Net Wallet', status: 'Successful', amount: 5.00, currency: 'Pi', raffle: 'iPhone 15 Pro Titanium Giveaway' },
-      { ticketNumber: '067', buyerName: 'Satoshi Nakamoto', buyerEmail: 'sat@btc.net', timestamp: '2 days ago', paymentMethod: 'Pi Net Wallet', status: 'Successful', amount: 5.00, currency: 'Pi', raffle: 'iPhone 15 Pro Titanium Giveaway' },
-      { ticketNumber: '088', buyerName: 'Yuki Ken', buyerEmail: 'yuki@co.jp', timestamp: '3 days ago', paymentMethod: 'Pi Net Wallet', status: 'Successful', amount: 5.00, currency: 'Pi', raffle: 'iPhone 15 Pro Titanium Giveaway' }
-    ],
-    status: 'active',
-    drawMethod: 'Automatic',
-    subdomain: 'iphone-pi',
-    startDate: '2026-06-19T00:00',
-    drawDate: '2026-06-25T15:00'
-  }
-];
+const INITIAL_RAFFLES: Raffle[] = [];
 
-const INITIAL_NOTIFICATIONS: AppNotification[] = [
-  { id: '1', title: 'Payment Confirmed', message: 'Your purchase of ticket #003 in Tesla Model Y Giveaway has been cleared on distributed ledger securely.', timestamp: '2 hours ago', type: 'success', read: false },
-  { id: '2', title: 'Tesla Model Y: 89% Sold', message: 'Only 11 tickets left before the automatic draw engine fires! Good luck.', timestamp: '3 hours ago', type: 'info', read: true },
-  { id: '3', title: 'Raffle SaaS platform updated', message: 'We have updated our draw mechanisms with independently provable RNG certified hashes.', timestamp: '1 day ago', type: 'info', read: true }
-];
+const INITIAL_NOTIFICATIONS: AppNotification[] = [];
 
 export default function App() {
   // Lang state, defaulting to 'es' (Spanish)
@@ -334,7 +258,7 @@ export default function App() {
       });
     });
 
-    // Update player dashboard statistics if Alex Johnson bought them
+    // Update player dashboard statistics if the current user bought them
     if (purchaser.email === currentUserProfile.email) {
       setCurrentUserProfile(prev => ({
         ...prev,
@@ -384,8 +308,8 @@ export default function App() {
       
       // Find the purchaser details
       const winningPurchase = raffleToDraw.purchases.find(p => Number(p.ticketNumber) === winnerTicketNum);
-      const winnerName = winningPurchase?.buyerName || 'Elena Rostova';
-      const winnerEmail = winningPurchase?.buyerEmail || 'elena@gmail.com';
+      const winnerName = winningPurchase?.buyerName || 'Participante Anónimo';
+      const winnerEmail = winningPurchase?.buyerEmail || 'anonimo@ejemplo.com';
 
       setRaffles(current => {
         return current.map(r => {

@@ -24,8 +24,8 @@ export default function PaymentModal({
   const t = translations[currentLanguage];
 
   // States
-  const [buyerName, setBuyerName] = useState('Alex Johnson');
-  const [buyerEmail, setBuyerEmail] = useState('alex@example.com');
+  const [buyerName, setBuyerName] = useState('');
+  const [buyerEmail, setBuyerEmail] = useState('');
   const [paymentMethod, setPaymentMethod] = useState(() => {
     if (raffle.currency === 'Pi') return 'Pi Net Wallet';
     if (raffle.currency === 'BRL') return 'Pix (Brazilian Instant)';
@@ -33,7 +33,7 @@ export default function PaymentModal({
   });
   
   // Credit card details or key values
-  const [cardKey, setCardKey] = useState('4111 2222 3333 4444');
+  const [cardKey, setCardKey] = useState('');
   
   // Phase handling
   const [status, setStatus] = useState<'idle' | 'processing' | 'completed'>('idle');
