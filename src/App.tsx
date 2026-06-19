@@ -11,6 +11,12 @@ import { translations } from './translations';
 import { Gift, Award, Calendar, Bell, Volume2, HelpCircle, Flame, CheckCircle2, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
+// Firebase core integrations
+import { auth, db } from './firebase';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import AuthModal from './components/AuthModal';
+
 // Preset raffle models for high fidelity demonstration
 const INITIAL_RAFFLES: Raffle[] = [
   {
@@ -102,13 +108,113 @@ export default function App() {
 
   // User Profile
   const [currentUserProfile, setCurrentUserProfile] = useState<UserProfile>({
-    name: 'Alex Johnson',
-    email: 'alex@example.com',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256',
-    tier: 'Pro',
-    rafflesJoinedCount: 3,
-    ticketsPurchasedCount: 5
+    name: 'Invitado',
+    email: 'guest@example.com',
+    avatar: 'https://api.dicebear.com/7.x/shapes/svg?seed=guest',
+    tier: 'Free',
+    rafflesJoinedCount: 0,
+    ticketsPurchasedCount: 0
   });
+
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
+  // Firebase Auth State listener
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        setIsLoggedIn(true);
+        // Fetch or create Firestore user profile matching the auth uid
+        try {
+          const userDocRef = doc(db, 'users', user.uid);
+          const userDocSnap = await getDoc(userDocRef);
+          
+          if (userDocSnap.exists()) {
+            const data = userDocSnap.data();
+            setCurrentUserProfile({
+              name: data.name || user.displayName || 'Usuario',
+              email: data.email || user.email || 'user@example.com',
+              avatar: data.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.uid)}`,
+              tier: data.tier || 'Free',
+              rafflesJoinedCount: data.rafflesJoinedCount || 0,
+              ticketsPurchasedCount: data.ticketsPurchasedCount || 0
+            });
+            // If they have initialRolePreference saved in Firestore, set it
+            if (data.initialRolePreference) {
+              setUserRole(data.initialRolePreference);
+            }
+          } else {
+            // Document does not exist yet, create a default one
+            const newProfile: UserProfile = {
+              name: user.displayName || 'Usuario RifaSaaS',
+              email: user.email || '',
+              avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.uid)}`,
+              tier: 'Free',
+              rafflesJoinedCount: 0,
+              ticketsPurchasedCount: 0
+            };
+            await setDoc(userDocRef, newProfile);
+            setCurrentUserProfile(newProfile);
+          }
+        } catch (err) {
+          console.error("Error synchronizing users profile from Firestore:", err);
+        }
+      } else {
+        setIsLoggedIn(false);
+        // Fallback to Guest profile representation
+        setCurrentUserProfile({
+          name: 'Invitado',
+          email: 'guest@example.com',
+          avatar: 'https://api.dicebear.com/7.x/shapes/svg?seed=guest',
+          tier: 'Free',
+          rafflesJoinedCount: 0,
+          ticketsPurchasedCount: 0
+        });
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+      setIsLoggedIn(false);
+      setCurrentTab('home');
+      setUserRole('client');
+      
+      // Push alert
+      const newAlert: AppNotification = {
+        id: `alert-${Date.now()}`,
+        title: selectedLanguage === 'es' ? 'Sesión Cerrada' : 'Logged Out',
+        message: selectedLanguage === 'es' ? 'Has cerrado sesión con éxito de RifaSaaS.' : 'You have successfully signed out of RifaSaaS.',
+        timestamp: 'Ahora mismo',
+        type: 'info',
+        read: false
+      };
+      setNotifications(prev => [newAlert, ...prev]);
+    } catch (err) {
+      console.error("Error signing out:", err);
+    }
+  };
+
+  const handleAuthSuccess = (profile: UserProfile, isNewUser: boolean) => {
+    setCurrentUserProfile(profile);
+    setIsLoggedIn(true);
+
+    // Push alert
+    const newAlert: AppNotification = {
+      id: `alert-${Date.now()}`,
+      title: selectedLanguage === 'es' ? 'Acceso Autorizado' : 'Access Authorized',
+      message: selectedLanguage === 'es' 
+        ? `Bienvenido a RifaSaaS, ${profile.name}. Tu perfil ha sido sincronizado vía Firebase.` 
+        : `Welcome to RifaSaaS, ${profile.name}. Your profile has been synchronized via Firebase.`,
+      timestamp: 'Ahora mismo',
+      type: 'success',
+      read: false
+    };
+    setNotifications(prev => [newAlert, ...prev]);
+  };
 
   // Raffles state with local persistence inside localStorage
   const [raffles, setRaffles] = useState<Raffle[]>(() => {
@@ -339,12 +445,20 @@ export default function App() {
         onLanguageChange={handleLanguageChange}
         userRole={userRole}
         onRoleToggle={(role) => {
+          if (!isLoggedIn && role === 'organizer') {
+            setIsAuthModalOpen(true);
+            return;
+          }
           setUserRole(role);
           setSelectedRaffleId(null);
         }}
         userProfile={currentUserProfile}
         currentTab={currentTab}
         onTabChange={(tab) => {
+          if (!isLoggedIn && (tab === 'mytickets' || tab === 'profile')) {
+            setIsAuthModalOpen(true);
+            return;
+          }
           setCurrentTab(tab);
           if (tab !== 'home') {
             setSelectedRaffleId(null);
@@ -352,6 +466,8 @@ export default function App() {
         }}
         unreadNotificationsCount={unreadAlertsCount}
         onAlertsClick={() => setIsAlertsOpen(true)}
+        isLoggedIn={isLoggedIn}
+        onAuthBtnClick={() => setIsAuthModalOpen(true)}
       />
 
       {/* Main Container Area */}
@@ -563,6 +679,8 @@ export default function App() {
                   raffles={raffles}
                   notifications={notifications}
                   onSelectRaffle={handleSelectRaffle}
+                  isLoggedIn={isLoggedIn}
+                  onSignOut={handleSignOut}
                 />
               )}
 
@@ -578,6 +696,8 @@ export default function App() {
                   raffles={raffles}
                   notifications={notifications}
                   onSelectRaffle={handleSelectRaffle}
+                  isLoggedIn={isLoggedIn}
+                  onSignOut={handleSignOut}
                 />
               )}
             </motion.div>
@@ -768,6 +888,14 @@ export default function App() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* REAL-TIME FIREBASE AUTH MODAL DIALOG */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        currentLanguage={selectedLanguage}
+        onAuthSuccess={handleAuthSuccess}
+      />
 
       {/* Simple decorative footer */}
       <footer className="py-8 border-t border-gray-200 mt-12 bg-white text-center">

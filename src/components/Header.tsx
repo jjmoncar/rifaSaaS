@@ -13,6 +13,8 @@ interface HeaderProps {
   onTabChange: (tab: string) => void;
   unreadNotificationsCount: number;
   onAlertsClick: () => void;
+  isLoggedIn?: boolean;
+  onAuthBtnClick?: () => void;
 }
 
 export default function Header({
@@ -24,7 +26,9 @@ export default function Header({
   currentTab,
   onTabChange,
   unreadNotificationsCount,
-  onAlertsClick
+  onAlertsClick,
+  isLoggedIn,
+  onAuthBtnClick
 }: HeaderProps) {
   const t = translations[currentLanguage];
 
@@ -226,23 +230,36 @@ export default function Header({
             )}
           </button>
 
-          {/* Small Profile Icon Badge */}
-          <button
-            id="profile-nav-avatar"
-            onClick={() => {
-              onRoleToggle('client');
-              onTabChange('profile');
-            }}
-            className="w-8 h-8 rounded-full border border-gray-200 overflow-hidden flex items-center justify-center bg-emerald-50 text-emerald-800 transition-transform active:scale-95 cursor-pointer hover:border-emerald-600 focus:outline-hidden"
-            title={userProfile.name}
-          >
-            <img 
-              referrerPolicy="no-referrer" 
-              src={userProfile.avatar} 
-              alt={userProfile.name} 
-              className="w-full h-full object-cover"
-            />
-          </button>
+          {/* Small Profile Icon Badge / Sign In option */}
+          {isLoggedIn ? (
+            <button
+              id="profile-nav-avatar"
+              onClick={() => {
+                onRoleToggle('client');
+                onTabChange('profile');
+              }}
+              className="w-8 h-8 rounded-full border border-gray-200 overflow-hidden flex items-center justify-center bg-emerald-50 text-emerald-800 transition-transform active:scale-95 cursor-pointer hover:border-emerald-600 focus:outline-hidden shrink-0"
+              title={userProfile.name}
+            >
+              <img 
+                referrerPolicy="no-referrer" 
+                src={userProfile.avatar} 
+                alt={userProfile.name} 
+                className="w-full h-full object-cover"
+              />
+            </button>
+          ) : (
+            <button
+              id="header-sign-in-cta"
+              onClick={onAuthBtnClick}
+              className="bg-emerald-700 text-white text-[11px] sm:text-xs font-bold px-3.5 py-1.5 rounded-lg hover:bg-emerald-800 active:scale-95 transition-all cursor-pointer shadow-2xs flex items-center gap-1 shrink-0"
+            >
+              <User size={13} />
+              <span>
+                {currentLanguage === 'es' ? 'Acceder' : currentLanguage === 'pt' ? 'Entrar' : 'Sign In'}
+              </span>
+            </button>
+          )}
 
         </div>
       </div>

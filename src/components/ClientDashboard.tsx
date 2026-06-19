@@ -10,6 +10,8 @@ interface ClientDashboardProps {
   raffles: Raffle[];
   notifications: AppNotification[];
   onSelectRaffle: (raffle: Raffle) => void;
+  onSignOut?: () => void;
+  isLoggedIn?: boolean;
 }
 
 export default function ClientDashboard({
@@ -18,7 +20,9 @@ export default function ClientDashboard({
   purchases,
   raffles,
   notifications,
-  onSelectRaffle
+  onSelectRaffle,
+  onSignOut,
+  isLoggedIn
 }: ClientDashboardProps) {
   const t = translations[currentLanguage];
 
@@ -102,14 +106,26 @@ export default function ClientDashboard({
           </div>
         </div>
 
-        <button
-          id="toggle-profile-edit-btn"
-          onClick={() => setIsEditingProfile(!isEditingProfile)}
-          className="border border-gray-300 py-2.5 px-4.5 rounded-xl text-xs font-semibold text-gray-700 bg-white hover:bg-gray-50 active:scale-95 transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer"
-        >
-          <Edit size={13} />
-          <span>{t.editProfileText}</span>
-        </button>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <button
+            id="toggle-profile-edit-btn"
+            onClick={() => setIsEditingProfile(!isEditingProfile)}
+            className="border border-gray-300 py-2.5 px-4.5 rounded-xl text-xs font-semibold text-gray-700 bg-white hover:bg-gray-50 active:scale-95 transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer"
+          >
+            <Edit size={13} />
+            <span>{t.editProfileText}</span>
+          </button>
+
+          {isLoggedIn && onSignOut && (
+            <button
+              id="profile-sign-out-btn"
+              onClick={onSignOut}
+              className="border border-red-200 text-red-700 py-2.5 px-4.5 rounded-xl text-xs font-semibold bg-red-50 hover:bg-red-100 active:scale-95 transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <span>{currentLanguage === 'es' ? 'Cerrar Sesión' : currentLanguage === 'pt' ? 'Sair' : 'Sign Out'}</span>
+            </button>
+          )}
+        </div>
       </section>
 
       {/* Bento Grid layout */}
