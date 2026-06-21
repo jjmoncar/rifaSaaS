@@ -676,8 +676,8 @@ export default function App() {
                     onSelectRaffle={handleSelectRaffle}
                     onSignOut={() => setIsLoggedIn(false)}
                     isLoggedIn={isLoggedIn}
-                    onPayReservedTicket={(raffleId, ticketNumber) => {
-                      handlePayClick(raffleId, [ticketNumber]);
+                    onPayReservedTickets={(raffleId, ticketNumbers) => {
+                      handlePayClick(raffleId, ticketNumbers);
                     }}
                   />
                 </div>

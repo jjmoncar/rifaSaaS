@@ -12,7 +12,7 @@ interface ClientDashboardProps {
   onSelectRaffle: (raffle: Raffle) => void;
   onSignOut?: () => void;
   isLoggedIn?: boolean;
-  onPayReservedTicket?: (raffleId: string, ticketNumber: number) => void;
+  onPayReservedTickets?: (raffleId: string, ticketNumbers: number[]) => void;
 }
 
 export default function ClientDashboard({
@@ -24,13 +24,34 @@ export default function ClientDashboard({
   onSelectRaffle,
   onSignOut,
   isLoggedIn,
-  onPayReservedTicket
+  onPayReservedTickets
 }: ClientDashboardProps) {
   const t = translations[currentLanguage];
 
   // States
   const [editedName, setEditedName] = useState(userProfile.name);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+
+  // Group purchases: combine 'Reserved' status tickets by raffle into a single row
+  const processedPurchases: (TicketPurchase & { _originalTickets?: number[] })[] = [];
+  const seenReserved = new Set<string>();
+
+  purchases.forEach(p => {
+    if (p.status === 'Reserved') {
+      if (!seenReserved.has(p.raffle)) {
+        seenReserved.add(p.raffle);
+        const allReserved = purchases.filter(x => x.status === 'Reserved' && x.raffle === p.raffle);
+        const totalAmount = allReserved.reduce((sum, x) => sum + x.amount, 0);
+        processedPurchases.push({
+          ...p,
+          amount: totalAmount,
+          _originalTickets: allReserved.map(x => Number(x.ticketNumber))
+        });
+      }
+    } else {
+      processedPurchases.push(p);
+    }
+  });
 
   return (
     <div className="space-y-6">
@@ -226,7 +247,7 @@ export default function ClientDashboard({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {purchases.map((p, index) => (
+                  {processedPurchases.map((p, index) => (
                     <tr key={index} className="hover:bg-gray-50/50 transition-colors">
                       <td className="px-5 py-4.5 text-xs text-gray-500 font-medium whitespace-nowrap">
                         {p.timestamp}
@@ -255,12 +276,12 @@ export default function ClientDashboard({
                             {p.status === 'Failed' && 'Failed'}
                           </span>
                           
-                          {p.status === 'Reserved' && onPayReservedTicket && (
+                          {p.status === 'Reserved' && onPayReservedTickets && p._originalTickets && (
                             <button
                               onClick={() => {
                                 const raffleObj = raffles.find(r => r.name === p.raffle);
                                 if (raffleObj) {
-                                  onPayReservedTicket(raffleObj.id, Number(p.ticketNumber));
+                                  onPayReservedTickets(raffleObj.id, p._originalTickets!);
                                 }
                               }}
                               className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-emerald-700 text-white hover:bg-emerald-800 transition-colors cursor-pointer shadow-sm shadow-emerald-700/10 uppercase tracking-widest"
