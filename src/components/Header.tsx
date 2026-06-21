@@ -136,38 +136,40 @@ export default function Header({
         <div className="flex items-center gap-2 sm:gap-3.5">
           
           {/* User Role Quick-Switch Pill */}
-          <div className="bg-gray-100 p-0.5 sm:p-1 rounded-full flex items-center shadow-inner">
-            <button
-              id="switch-role-organizer"
-              onClick={() => {
-                onRoleToggle('organizer');
-                onTabChange('dashboard');
-              }}
-              title="Switch to Organizer view"
-              className={`px-2.5 sm:px-3.5 py-1 text-[11px] sm:text-xs font-semibold rounded-full transition-all cursor-pointer ${
-                userRole === 'organizer'
-                  ? 'bg-emerald-700 text-white shadow-xs'
-                  : 'text-gray-600 hover:text-emerald-700'
-              }`}
-            >
-              SaaS Admin
-            </button>
-            <button
-              id="switch-role-client"
-              onClick={() => {
-                onRoleToggle('client');
-                onTabChange('home');
-              }}
-              title="Switch to Client/Buyer view"
-              className={`px-2.5 sm:px-3.5 py-1 text-[11px] sm:text-xs font-semibold rounded-full transition-all cursor-pointer ${
-                userRole === 'client'
-                  ? 'bg-emerald-700 text-white shadow-xs'
-                  : 'text-gray-600 hover:text-emerald-700'
-              }`}
-            >
-              Comprar
-            </button>
-          </div>
+          {(!isLoggedIn || userProfile.role === 'organizer') && (
+            <div className="bg-gray-100 p-0.5 sm:p-1 rounded-full flex items-center shadow-inner">
+              <button
+                id="switch-role-organizer"
+                onClick={() => {
+                  onRoleToggle('organizer');
+                  onTabChange('dashboard');
+                }}
+                title="Switch to Organizer view"
+                className={`px-2.5 sm:px-3.5 py-1 text-[11px] sm:text-xs font-semibold rounded-full transition-all cursor-pointer ${
+                  userRole === 'organizer'
+                    ? 'bg-emerald-700 text-white shadow-xs'
+                    : 'text-gray-600 hover:text-emerald-700'
+                }`}
+              >
+                SaaS Admin
+              </button>
+              <button
+                id="switch-role-client"
+                onClick={() => {
+                  onRoleToggle('client');
+                  onTabChange('home');
+                }}
+                title="Switch to Client/Buyer view"
+                className={`px-2.5 sm:px-3.5 py-1 text-[11px] sm:text-xs font-semibold rounded-full transition-all cursor-pointer ${
+                  userRole === 'client'
+                    ? 'bg-emerald-700 text-white shadow-xs'
+                    : 'text-gray-600 hover:text-emerald-700'
+                }`}
+              >
+                Comprar
+              </button>
+            </div>
+          )}
 
           {/* Language Switcher Dropdown */}
           <div className="relative group/lang flex items-center">

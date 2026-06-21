@@ -153,7 +153,8 @@ export default function AuthModal({
             avatar: data.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.uid)}`,
             tier: data.tier || 'Free',
             rafflesJoinedCount: data.rafflesJoinedCount || 0,
-            ticketsPurchasedCount: data.ticketsPurchasedCount || 0
+            ticketsPurchasedCount: data.ticketsPurchasedCount || 0,
+            role: data.role || data.initialRolePreference || 'client'
           };
         } else {
           // Fallback if auth exists but no firestore document
@@ -163,7 +164,8 @@ export default function AuthModal({
             avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.uid)}`,
             tier: 'Free',
             rafflesJoinedCount: 0,
-            ticketsPurchasedCount: 0
+            ticketsPurchasedCount: 0,
+            role: 'client'
           };
           // Save database backup for integrity
           await setDoc(userDocRef, profileData);
@@ -186,14 +188,14 @@ export default function AuthModal({
 
         // Generate profile data
         const avatarSeed = user.uid;
-        const profileData: UserProfile & { initialRolePreference: string } = {
+        const profileData: UserProfile = {
           name: fullName,
           email: email,
           avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(avatarSeed)}`,
           tier: 'Free',
           rafflesJoinedCount: 0,
           ticketsPurchasedCount: 0,
-          initialRolePreference: initialRole
+          role: initialRole
         };
 
         // Write user profile to Firebase Firestore
@@ -208,7 +210,8 @@ export default function AuthModal({
             avatar: profileData.avatar,
             tier: profileData.tier,
             rafflesJoinedCount: profileData.rafflesJoinedCount,
-            ticketsPurchasedCount: profileData.ticketsPurchasedCount
+            ticketsPurchasedCount: profileData.ticketsPurchasedCount,
+            role: profileData.role
           }, true);
           onClose();
           setLoading(false);
@@ -263,7 +266,8 @@ export default function AuthModal({
           avatar: data.avatar || user.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.uid)}`,
           tier: data.tier || 'Free',
           rafflesJoinedCount: data.rafflesJoinedCount || 0,
-          ticketsPurchasedCount: data.ticketsPurchasedCount || 0
+          ticketsPurchasedCount: data.ticketsPurchasedCount || 0,
+          role: data.role || data.initialRolePreference || 'client'
         };
       } else {
         isNew = true;
@@ -274,7 +278,7 @@ export default function AuthModal({
           tier: 'Free',
           rafflesJoinedCount: 0,
           ticketsPurchasedCount: 0,
-          initialRolePreference: initialRole || 'client'
+          role: initialRole || 'client'
         };
         await setDoc(userDocRef, profileData);
       }

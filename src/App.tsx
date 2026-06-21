@@ -55,18 +55,18 @@ export default function App() {
           
           if (userDocSnap.exists()) {
             const data = userDocSnap.data();
+            const userRoleVal = data.role || data.initialRolePreference || 'client';
             setCurrentUserProfile({
               name: data.name || user.displayName || 'Usuario',
               email: data.email || user.email || 'user@example.com',
               avatar: data.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.uid)}`,
               tier: data.tier || 'Free',
               rafflesJoinedCount: data.rafflesJoinedCount || 0,
-              ticketsPurchasedCount: data.ticketsPurchasedCount || 0
+              ticketsPurchasedCount: data.ticketsPurchasedCount || 0,
+              role: userRoleVal
             });
-            // If they have initialRolePreference saved in Firestore, set it
-            if (data.initialRolePreference) {
-              setUserRole(data.initialRolePreference);
-            }
+            // Set user role based on profile role
+            setUserRole(userRoleVal);
           } else {
             // Document does not exist yet, create a default one
             const newProfile: UserProfile = {
@@ -75,7 +75,8 @@ export default function App() {
               avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.uid)}`,
               tier: 'Free',
               rafflesJoinedCount: 0,
-              ticketsPurchasedCount: 0
+              ticketsPurchasedCount: 0,
+              role: 'client'
             };
             await setDoc(userDocRef, newProfile);
             setCurrentUserProfile(newProfile);
@@ -92,7 +93,8 @@ export default function App() {
           avatar: 'https://api.dicebear.com/7.x/shapes/svg?seed=guest',
           tier: 'Free',
           rafflesJoinedCount: 0,
-          ticketsPurchasedCount: 0
+          ticketsPurchasedCount: 0,
+          role: 'client'
         });
       }
     });
@@ -125,6 +127,9 @@ export default function App() {
   const handleAuthSuccess = (profile: UserProfile, isNewUser: boolean) => {
     setCurrentUserProfile(profile);
     setIsLoggedIn(true);
+    if (profile.role) {
+      setUserRole(profile.role as any);
+    }
 
     // Push alert
     const newAlert: AppNotification = {

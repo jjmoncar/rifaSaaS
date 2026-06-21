@@ -49,4 +49,5 @@ export interface UserProfile {
   tier: 'Free' | 'Pro' | 'Enterprise';
   rafflesJoinedCount: number;
   ticketsPurchasedCount: number;
+  role?: 'organizer' | 'client';
 }
