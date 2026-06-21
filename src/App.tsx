@@ -147,13 +147,13 @@ export default function App() {
 
   // Raffles state with local persistence inside localStorage
   const [raffles, setRaffles] = useState<Raffle[]>(() => {
-    const local = localStorage.getItem('rifasaas_raffles');
+    const local = localStorage.getItem('rifasaas_raffles_v2');
     return local ? JSON.parse(local) : INITIAL_RAFFLES;
   });
 
   // Alerts inside app
   const [notifications, setNotifications] = useState<AppNotification[]>(() => {
-    const local = localStorage.getItem('rifasaas_notifs');
+    const local = localStorage.getItem('rifasaas_notifs_v2');
     return local ? JSON.parse(local) : INITIAL_NOTIFICATIONS;
   });
 
@@ -181,11 +181,11 @@ export default function App() {
 
   // Persists to localStorage whenever modified
   useEffect(() => {
-    localStorage.setItem('rifasaas_raffles', JSON.stringify(raffles));
+    localStorage.setItem('rifasaas_raffles_v2', JSON.stringify(raffles));
   }, [raffles]);
 
   useEffect(() => {
-    localStorage.setItem('rifasaas_notifs', JSON.stringify(notifications));
+    localStorage.setItem('rifasaas_notifs_v2', JSON.stringify(notifications));
   }, [notifications]);
 
   useEffect(() => {

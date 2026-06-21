@@ -59,6 +59,17 @@ export default function CreateRaffleModal({
 
   if (!isOpen) return null;
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setCoverImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handlePublish = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !description || !subdomain) {
@@ -180,7 +191,7 @@ export default function CreateRaffleModal({
               {/* Cover presets visual picker */}
               <div className="flex flex-col gap-2 pt-1">
                 <label className="text-xs font-semibold text-gray-600 uppercase tracking-widest">{t.coverImage}</label>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {PRESET_IMAGES.map((img) => (
                     <button
                       id={`preset-img-${img.name.replace(/\s+/g, '-').toLowerCase()}`}
@@ -209,7 +220,26 @@ export default function CreateRaffleModal({
                       )}
                     </button>
                   ))}
+                  
+                  {/* Upload custom image */}
+                  <label className="relative aspect-video rounded-lg overflow-hidden border-2 border-dashed border-gray-300 hover:border-emerald-500 hover:bg-emerald-50 flex flex-col items-center justify-center cursor-pointer transition-all">
+                    <span className="text-[10px] sm:text-xs font-semibold text-gray-500 mt-1 text-center px-1">
+                      {currentLanguage === 'es' ? 'Subir Imagen' : currentLanguage === 'pt' ? 'Carregar Imagem' : 'Upload Image'}
+                    </span>
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      className="hidden" 
+                      onChange={handleImageUpload} 
+                    />
+                  </label>
                 </div>
+                {/* Custom Image Preview if selected */}
+                {!PRESET_IMAGES.some(img => img.url === coverImage) && coverImage && (
+                  <div className="mt-2 text-xs text-emerald-700 font-semibold flex items-center gap-1">
+                    <Check size={14} /> Imagen personalizada cargada
+                  </div>
+                )}
               </div>
             </div>
           </section>
