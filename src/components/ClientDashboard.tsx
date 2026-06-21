@@ -27,35 +27,8 @@ export default function ClientDashboard({
   const t = translations[currentLanguage];
 
   // States
-  const [countdownStr, setCountdownStr] = useState('02:17:04:34');
   const [editedName, setEditedName] = useState(userProfile.name);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
-
-  // Dynamic ticking countdown sequence
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const now = new Date();
-      const target = new Date();
-      target.setDate(target.getDate() + 2);
-      target.setHours(17, 4, 34, 0);
-
-      const diff = target.getTime() - now.getTime();
-      if (diff <= 0) {
-        setCountdownStr('00:00:00:00');
-        return;
-      }
-
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const secs = Math.floor((diff % (1000 * 60)) / 1000);
-
-      const formatted = `0${days}:${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-      setCountdownStr(formatted);
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, []);
 
   return (
     <div className="space-y-6">
@@ -98,11 +71,6 @@ export default function ClientDashboard({
               </h1>
             )}
             <p className="text-xs text-gray-500 mt-1 font-mono">{userProfile.email}</p>
-            <div className="mt-2 text-left">
-              <span className="bg-emerald-50 text-emerald-800 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider shadow-2xs">
-                {t.premiumMember}
-              </span>
-            </div>
           </div>
         </div>
 
@@ -132,13 +100,10 @@ export default function ClientDashboard({
       <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
         
         {/* Metric Card 1: Raffles Joined */}
-        <div className="md:col-span-4 bg-white border border-gray-150 rounded-2xl p-5 flex flex-col justify-between shadow-xs">
+        <div className="md:col-span-6 bg-white border border-gray-150 rounded-2xl p-5 flex flex-col justify-between shadow-xs">
           <div className="flex items-center justify-between">
             <span className="p-2.5 bg-emerald-50 text-emerald-700 rounded-xl">
               <Activity size={18} />
-            </span>
-            <span className="text-emerald-700 font-extrabold text-xs bg-emerald-50 px-2 py-0.5 rounded-full">
-              +2 this month
             </span>
           </div>
           <div className="mt-5">
@@ -148,42 +113,15 @@ export default function ClientDashboard({
         </div>
 
         {/* Metric Card 2: Tickets Purchased */}
-        <div className="md:col-span-4 bg-white border border-gray-150 rounded-2xl p-5 flex flex-col justify-between shadow-xs animate-pulse">
+        <div className="md:col-span-6 bg-white border border-gray-150 rounded-2xl p-5 flex flex-col justify-between shadow-xs">
           <div className="flex items-center justify-between">
             <span className="p-2.5 bg-emerald-50 text-emerald-700 rounded-xl">
               <Ticket size={18} />
-            </span>
-            <span className="text-emerald-700 font-extrabold text-xs bg-emerald-50 px-2 py-0.5 rounded-full uppercase tracking-wider">
-              Top 5% User
             </span>
           </div>
           <div className="mt-5">
             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{t.ticketsPurchased}</p>
             <h2 className="text-3xl font-black text-gray-900 mt-0.5">{userProfile.ticketsPurchasedCount}</h2>
-          </div>
-        </div>
-
-        {/* Slated black timer countdown with ticking progress bar */}
-        <div className="md:col-span-4 relative overflow-hidden bg-slate-900 text-white rounded-2xl p-5 shadow-lg border border-slate-800">
-          <div className="relative z-10 flex flex-col justify-between h-full space-y-4">
-            <div>
-              <p className="text-[10px] text-emerald-400 font-extrabold uppercase tracking-widest">{t.nextBigDrawIn}</p>
-              <div className="flex items-baseline gap-1 mt-1">
-                <span className="text-2xl font-black font-mono tracking-tight tabular-nums" id="profile-countdown-display">
-                  {countdownStr}
-                </span>
-              </div>
-            </div>
-            
-            <div className="mt-auto">
-              <p className="text-xs text-slate-300 font-semibold">{t.teslaFinale}</p>
-              <div className="w-full bg-slate-800 h-1.5 rounded-full mt-2 overflow-hidden block">
-                <div className="bg-emerald-400 h-full w-[85%] rounded-full shadow-lg" />
-              </div>
-            </div>
-          </div>
-          <div className="absolute -right-6 -bottom-6 text-slate-800 pointer-events-none opacity-20">
-            <Zap size={132} fill="currentColor" />
           </div>
         </div>
 
@@ -303,11 +241,14 @@ export default function ClientDashboard({
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
                             p.status === 'Successful'
                               ? 'bg-emerald-50 text-emerald-800 border-emerald-100'
+                              : p.status === 'Reserved'
+                              ? 'bg-amber-100 text-amber-800 border-amber-200'
                               : p.status === 'Processing'
                               ? 'bg-amber-50 text-amber-800 border-amber-100 animate-pulse'
                               : 'bg-red-50 text-red-800 border-red-100'
                           }`}>
                             {p.status === 'Successful' && t.successful}
+                            {p.status === 'Reserved' && (currentLanguage === 'es' || currentLanguage === 'pt' ? 'Reservado' : 'Reserved')}
                             {p.status === 'Processing' && t.processing}
                             {p.status === 'Failed' && 'Failed'}
                           </span>
@@ -325,32 +266,6 @@ export default function ClientDashboard({
         {/* Column Right (Single Size): widgets & alerts */}
         <div className="space-y-6">
           
-          {/* Win Probability chart meters */}
-          <div className="bg-emerald-800 text-white rounded-2xl p-5 shadow-lg relative overflow-hidden">
-            <h3 className="text-xs font-extrabold text-emerald-200 uppercase tracking-widest">{t.winProbability}</h3>
-            
-            <div className="relative pt-4">
-              <div className="flex mb-2 items-center justify-between">
-                <div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider py-1 px-2 rounded-full bg-emerald-700 text-white shadow-inner">
-                    {t.currentRank}
-                  </span>
-                </div>
-                <div className="text-right">
-                  <span className="text-sm font-black text-white">65%</span>
-                </div>
-              </div>
-
-              {/* Progress meter */}
-              <div className="overflow-hidden h-2.5 mb-4 text-xs flex rounded-full bg-emerald-900/60 block border border-emerald-600/30">
-                <div className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-gradient-to-r from-emerald-400 to-emerald-350" style={{ width: '65%' }} />
-              </div>
-            </div>
-
-            <p className="text-xs italic text-emerald-100 leading-relaxed font-medium">
-              "{t.joinMoreRewards}"
-            </p>
-          </div>
 
           {/* Quick Notifications feed alerts */}
           <div className="bg-white border border-gray-150 rounded-2xl p-5 shadow-xs">
