@@ -307,10 +307,22 @@ export default function App() {
           if (!originalSold.includes(num)) originalSold.push(num);
         });
 
+        // Filter out any prior 'Reserved' purchases for these specific tickets
+        const cleanPurchases = raffle.purchases.filter(p => {
+          if (p.status === 'Reserved' && pendingTicketSelection.map(n => String(n).padStart(3, '0')).includes(p.ticketNumber)) {
+            return false;
+          }
+          return true;
+        });
+
+        // Remove from reservedTickets list
+        const cleanReserved = raffle.reservedTickets.filter(num => !pendingTicketSelection.includes(num));
+
         return {
           ...raffle,
           soldTickets: originalSold,
-          purchases: [...newPurchases, ...raffle.purchases]
+          reservedTickets: cleanReserved,
+          purchases: [...newPurchases, ...cleanPurchases]
         };
       });
     });
@@ -654,16 +666,21 @@ export default function App() {
               )}
 
               {currentTab === 'mytickets' && (
-                <ClientDashboard
-                  currentLanguage={selectedLanguage}
-                  userProfile={currentUserProfile}
-                  purchases={cumulativePurchases.filter(p => p.buyerEmail === currentUserProfile.email)}
-                  raffles={raffles}
-                  notifications={notifications}
-                  onSelectRaffle={handleSelectRaffle}
-                  isLoggedIn={isLoggedIn}
-                  onSignOut={handleSignOut}
-                />
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  <ClientDashboard
+                    currentLanguage={selectedLanguage}
+                    userProfile={currentUserProfile}
+                    purchases={cumulativePurchases.filter(p => p.buyerEmail === currentUserProfile.email)}
+                    raffles={raffles}
+                    notifications={notifications}
+                    onSelectRaffle={handleSelectRaffle}
+                    onSignOut={() => setIsLoggedIn(false)}
+                    isLoggedIn={isLoggedIn}
+                    onPayReservedTicket={(raffleId, ticketNumber) => {
+                      handlePayClick(raffleId, [ticketNumber]);
+                    }}
+                  />
+                </div>
               )}
 
               {currentTab === 'pricing' && (

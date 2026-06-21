@@ -12,6 +12,7 @@ interface ClientDashboardProps {
   onSelectRaffle: (raffle: Raffle) => void;
   onSignOut?: () => void;
   isLoggedIn?: boolean;
+  onPayReservedTicket?: (raffleId: string, ticketNumber: number) => void;
 }
 
 export default function ClientDashboard({
@@ -22,7 +23,8 @@ export default function ClientDashboard({
   notifications,
   onSelectRaffle,
   onSignOut,
-  isLoggedIn
+  isLoggedIn,
+  onPayReservedTicket
 }: ClientDashboardProps) {
   const t = translations[currentLanguage];
 
@@ -237,7 +239,7 @@ export default function ClientDashboard({
                         {p.amount.toLocaleString('en-US', { minimumFractionDigits: p.currency === 'Pi' ? 0 : 2, maximumFractionDigits: 2 })}
                       </td>
                       <td className="px-5 py-4.5">
-                        <div className="flex items-center justify-center">
+                        <div className="flex items-center justify-center gap-2">
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
                             p.status === 'Successful'
                               ? 'bg-emerald-50 text-emerald-800 border-emerald-100'
@@ -252,6 +254,20 @@ export default function ClientDashboard({
                             {p.status === 'Processing' && t.processing}
                             {p.status === 'Failed' && 'Failed'}
                           </span>
+                          
+                          {p.status === 'Reserved' && onPayReservedTicket && (
+                            <button
+                              onClick={() => {
+                                const raffleObj = raffles.find(r => r.name === p.raffle);
+                                if (raffleObj) {
+                                  onPayReservedTicket(raffleObj.id, Number(p.ticketNumber));
+                                }
+                              }}
+                              className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-emerald-700 text-white hover:bg-emerald-800 transition-colors cursor-pointer shadow-sm shadow-emerald-700/10 uppercase tracking-widest"
+                            >
+                              {currentLanguage === 'es' ? 'Pagar' : currentLanguage === 'pt' ? 'Pagar' : 'Pay'}
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
