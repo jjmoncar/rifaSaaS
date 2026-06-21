@@ -8,6 +8,7 @@ interface TicketBoardProps {
   currentLanguage: Language;
   raffle: Raffle;
   onPayClick: (raffleId: string, ticketNumbers: number[]) => void;
+  onReserveClick: (raffleId: string, ticketNumbers: number[]) => void;
   onTriggerDraw: (raffleId: string) => void;
   userRole: 'organizer' | 'client';
 }
@@ -16,6 +17,7 @@ export default function TicketBoard({
   currentLanguage,
   raffle,
   onPayClick,
+  onReserveClick,
   onTriggerDraw,
   userRole
 }: TicketBoardProps) {
@@ -78,6 +80,11 @@ export default function TicketBoard({
   const handleCheckout = () => {
     if (selectedTickets.length === 0) return;
     onPayClick(raffle.id, selectedTickets);
+  };
+
+  const handleReserve = () => {
+    if (selectedTickets.length === 0) return;
+    onReserveClick(raffle.id, selectedTickets);
   };
 
   // Filter & Search Tickets list
@@ -361,14 +368,24 @@ export default function TicketBoard({
                 </p>
               </div>
               
-              <button
-                id="pay-tickets-cart-btn"
-                onClick={handleCheckout}
-                className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-sm px-6 py-3.5 rounded-xl flex items-center gap-2 shadow-lg shadow-emerald-700/10 active:scale-97 transition-all cursor-pointer"
-              >
-                <span>{t.payNow}</span>
-                <Lock size={14} />
-              </button>
+              <div className="flex gap-2">
+                <button
+                  id="reserve-tickets-cart-btn"
+                  onClick={handleReserve}
+                  className="bg-amber-600 hover:bg-amber-700 text-white font-semibold text-sm px-4 md:px-6 py-3.5 rounded-xl flex items-center gap-2 shadow-lg shadow-amber-600/10 active:scale-97 transition-all cursor-pointer"
+                >
+                  <span className="hidden sm:inline">{currentLanguage === 'es' ? 'Reservar' : currentLanguage === 'pt' ? 'Reservar' : 'Reserve'}</span>
+                  <Clock size={14} />
+                </button>
+                <button
+                  id="pay-tickets-cart-btn"
+                  onClick={handleCheckout}
+                  className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-sm px-4 md:px-6 py-3.5 rounded-xl flex items-center gap-2 shadow-lg shadow-emerald-700/10 active:scale-97 transition-all cursor-pointer"
+                >
+                  <span>{t.payNow}</span>
+                  <Lock size={14} />
+                </button>
+              </div>
             </div>
 
           </div>

@@ -6,7 +6,7 @@ export interface TicketPurchase {
   buyerEmail: string;
   timestamp: string;
   paymentMethod: string;
-  status: 'Successful' | 'Processing' | 'Failed';
+  status: 'Successful' | 'Processing' | 'Failed' | 'Reserved';
   amount: number;
   currency: string;
   raffle: string;

@@ -229,6 +229,58 @@ export default function App() {
     setIsPaymentModalOpen(true);
   };
 
+  // Ticket reservation handler
+  const handleReserveClick = (raffleId: string, ticketNumbers: number[]) => {
+    if (!isLoggedIn) {
+      setIsAuthModalOpen(true);
+      return;
+    }
+
+    setRaffles(prevRaffles => {
+      return prevRaffles.map(raffle => {
+        if (raffle.id !== raffleId) return raffle;
+
+        const newPurchases: TicketPurchase[] = ticketNumbers.map(num => ({
+          ticketNumber: String(num).padStart(3, '0'),
+          buyerName: currentUserProfile.name,
+          buyerEmail: currentUserProfile.email,
+          timestamp: 'Just now',
+          paymentMethod: 'None',
+          status: 'Reserved',
+          amount: raffle.ticketPrice,
+          currency: raffle.currency,
+          raffle: raffle.name
+        }));
+
+        const newReserved = [...raffle.reservedTickets];
+        ticketNumbers.forEach(num => {
+          if (!newReserved.includes(num)) newReserved.push(num);
+        });
+
+        return {
+          ...raffle,
+          reservedTickets: newReserved,
+          purchases: [...newPurchases, ...raffle.purchases]
+        };
+      });
+    });
+
+    const newAlert: AppNotification = {
+      id: `alert-${Date.now()}`,
+      title: selectedLanguage === 'es' ? 'Reserva Exitosa' : selectedLanguage === 'pt' ? 'Reserva Bem Sucedida' : 'Reservation Successful',
+      message: selectedLanguage === 'es' 
+        ? `Has reservado los boletos ${ticketNumbers.map(n => '#' + String(n).padStart(3, '0')).join(', ')}. Recuerda pagarlos pronto.` 
+        : `You reserved tickets ${ticketNumbers.map(n => '#' + String(n).padStart(3, '0')).join(', ')}.`,
+      timestamp: 'Ahora mismo',
+      type: 'info',
+      read: false
+    };
+    setNotifications(prev => [newAlert, ...prev]);
+
+    setSelectedRaffleId(null);
+    setCurrentTab('mytickets');
+  };
+
   // Handle verified successful payments
   const handlePaymentSuccess = (purchaser: { name: string; email: string; paymentMethod: string }) => {
     if (!activeRaffleIdForCart) return;
@@ -457,6 +509,7 @@ export default function App() {
                         currentLanguage={selectedLanguage}
                         raffle={raffles.find(r => r.id === selectedRaffleId)!}
                         onPayClick={handlePayClick}
+                        onReserveClick={handleReserveClick}
                         onTriggerDraw={handleTriggerDraw}
                         userRole={userRole}
                       />
