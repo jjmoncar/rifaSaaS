@@ -11,6 +11,7 @@ interface OrganizerDashboardProps {
   onSelectRaffle: (raffle: Raffle) => void;
   onTriggerDraw: (raffleId: string) => void;
   onToggleRaffleStatus?: (raffleId: string) => void;
+  onTriggerManualDraw: (raffleId: string, ticketNum: number) => void;
 }
 
 export default function OrganizerDashboard({
@@ -20,7 +21,8 @@ export default function OrganizerDashboard({
   onCreateRaffleClick,
   onSelectRaffle,
   onTriggerDraw,
-  onToggleRaffleStatus
+  onToggleRaffleStatus,
+  onTriggerManualDraw
 }: OrganizerDashboardProps) {
   const t = translations[currentLanguage];
 
@@ -259,15 +261,36 @@ export default function OrganizerDashboard({
                         <td className="px-6 py-4.5">
                           <div className="flex items-center justify-center gap-2">
                             {raffle.status === 'active' && (
-                              <button
-                                id={`draw-raffle-btn-${raffle.id}`}
-                                onClick={() => onTriggerDraw(raffle.id)}
-                                title={t.runAutomatedDraw}
-                                className="p-2 border border-emerald-300 hover:border-emerald-600 rounded-lg hover:bg-emerald-50 text-emerald-700 transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-semibold"
-                              >
-                                <Play size={14} fill="currentColor" />
-                                <span>{t.runAutomatedDraw}</span>
-                              </button>
+                              <>
+                                <button
+                                  id={`draw-raffle-btn-${raffle.id}`}
+                                  onClick={() => onTriggerDraw(raffle.id)}
+                                  title={t.runAutomatedDraw}
+                                  className="p-2 border border-emerald-300 hover:border-emerald-600 rounded-lg hover:bg-emerald-50 text-emerald-700 transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-semibold"
+                                >
+                                  <Play size={14} fill="currentColor" />
+                                  <span>{t.runAutomatedDraw}</span>
+                                </button>
+                                <button
+                                  id={`manual-draw-raffle-btn-${raffle.id}`}
+                                  onClick={() => {
+                                    const ticketStr = window.prompt("Ingrese el número ganador del sorteo:");
+                                    if (ticketStr) {
+                                      const ticketNum = parseInt(ticketStr, 10);
+                                      if (!isNaN(ticketNum)) {
+                                        onTriggerManualDraw(raffle.id, ticketNum);
+                                      } else {
+                                        alert("Por favor ingrese un número de ticket válido.");
+                                      }
+                                    }
+                                  }}
+                                  title="Sorteo Manual"
+                                  className="p-2 border border-amber-300 hover:border-amber-600 rounded-lg hover:bg-amber-50 text-amber-700 transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-semibold"
+                                >
+                                  <Edit2 size={14} fill="currentColor" />
+                                  <span>Manual</span>
+                                </button>
+                              </>
                             )}
                             {onToggleRaffleStatus && (raffle.status === 'active' || raffle.status === 'closed' || raffle.status === 'draft') && (
                               <button

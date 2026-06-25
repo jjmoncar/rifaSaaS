@@ -366,41 +366,78 @@ export default function App() {
       return;
     }
 
+    const docRef = doc(db, 'raffles', raffleId);
+
     // Mark raffle status as 'drawing'
-    setRaffles(current => {
-      return current.map(r => r.id === raffleId ? { ...r, status: 'drawing' } : r);
-    });
+    updateDoc(docRef, { status: 'drawing' }).then(() => {
+      // Run beautiful animated transition timer before revealing winner
+      setTimeout(() => {
+        // Pick randomly from sold tickets to make a valid winner
+        const sold = raffleToDraw.soldTickets;
+        const winnerTicketNum = sold[Math.floor(Math.random() * sold.length)];
+        
+        // Find the purchaser details
+        const winningPurchase = raffleToDraw.purchases.find(p => Number(p.ticketNumber) === winnerTicketNum);
+        const winnerName = winningPurchase?.buyerName || 'Participante Anónimo';
+        const winnerEmail = winningPurchase?.buyerEmail || 'anonimo@ejemplo.com';
 
-    // Run beautiful animated transition timer before revealing winner
-    setTimeout(() => {
-      // Pick randomly from sold tickets to make a valid winner
-      const sold = raffleToDraw.soldTickets;
-      const winnerTicketNum = sold[Math.floor(Math.random() * sold.length)];
-      
-      // Find the purchaser details
-      const winningPurchase = raffleToDraw.purchases.find(p => Number(p.ticketNumber) === winnerTicketNum);
-      const winnerName = winningPurchase?.buyerName || 'Participante Anónimo';
-      const winnerEmail = winningPurchase?.buyerEmail || 'anonimo@ejemplo.com';
+        updateDoc(docRef, {
+          status: 'drawn',
+          winnerTicket: String(winnerTicketNum).padStart(3, '0'),
+          winnerName,
+          winnerEmail
+        }).then(() => {
+          // Push draw results notification
+          const resultAlert: AppNotification = {
+            id: `alert-${Date.now()}`,
+            title: '🎉 GANADOR CONFIRMADO',
+            message: `El boleto #${String(winnerTicketNum).padStart(3, '0')} resultó ganador de la campaña ${raffleToDraw.name}. ¡Felicitaciones a ${winnerName}!`,
+            timestamp: 'Ahora mismo',
+            type: 'draw',
+            read: false
+          };
+          setNotifications(prev => [resultAlert, ...prev]);
 
-      setRaffles(current => {
-        return current.map(r => {
-          if (r.id === raffleId) {
-            return {
-              ...r,
-              status: 'drawn',
-              winnerTicket: String(winnerTicketNum).padStart(3, '0'),
-              winnerName,
-              winnerEmail
-            };
-          }
-          return r;
-        });
-      });
+          // Pop active overlay celebration
+          setDrawnCelebrationData({
+            raffleName: raffleToDraw.name,
+            ticket: String(winnerTicketNum).padStart(3, '0'),
+            winnerName,
+            winnerEmail
+          });
+        }).catch(console.error);
+      }, 3200);
+    }).catch(console.error);
+  };
 
+  // Manual draw function
+  const handleManualDraw = (raffleId: string, winnerTicketNum: number) => {
+    const raffleToDraw = raffles.find(r => r.id === raffleId);
+    if (!raffleToDraw) return;
+
+    // Check if ticket is sold
+    if (!raffleToDraw.soldTickets.includes(winnerTicketNum)) {
+      alert(selectedLanguage === 'es' ? 'El ticket ingresado no ha sido vendido.' : 'The entered ticket has not been sold.');
+      return;
+    }
+
+    const docRef = doc(db, 'raffles', raffleId);
+
+    // Find the purchaser details
+    const winningPurchase = raffleToDraw.purchases.find(p => Number(p.ticketNumber) === winnerTicketNum);
+    const winnerName = winningPurchase?.buyerName || 'Participante Anónimo';
+    const winnerEmail = winningPurchase?.buyerEmail || 'anonimo@ejemplo.com';
+
+    updateDoc(docRef, {
+      status: 'drawn',
+      winnerTicket: String(winnerTicketNum).padStart(3, '0'),
+      winnerName,
+      winnerEmail
+    }).then(() => {
       // Push draw results notification
       const resultAlert: AppNotification = {
         id: `alert-${Date.now()}`,
-        title: '🎉 GANADOR CONFIRMADO',
+        title: '🎉 GANADOR CONFIRMADO (MANUAL)',
         message: `El boleto #${String(winnerTicketNum).padStart(3, '0')} resultó ganador de la campaña ${raffleToDraw.name}. ¡Felicitaciones a ${winnerName}!`,
         timestamp: 'Ahora mismo',
         type: 'draw',
@@ -415,8 +452,7 @@ export default function App() {
         winnerName,
         winnerEmail
       });
-
-    }, 3200);
+    }).catch(console.error);
   };
 
   // Cumulative transactions catalog
@@ -430,13 +466,12 @@ export default function App() {
   };
 
   const handleToggleRaffleStatus = (raffleId: string) => {
-    setRaffles(current => current.map(r => {
-      if (r.id === raffleId) {
-        const newStatus = r.status === 'active' ? 'closed' : 'active';
-        return { ...r, status: newStatus as any };
-      }
-      return r;
-    }));
+    const raffle = raffles.find(r => r.id === raffleId);
+    if (!raffle) return;
+    
+    const newStatus = raffle.status === 'active' ? 'closed' : 'active';
+    const docRef = doc(db, 'raffles', raffleId);
+    updateDoc(docRef, { status: newStatus }).catch(console.error);
   };
 
   const unreadAlertsCount = notifications.filter(a => !a.read).length;
@@ -516,8 +551,9 @@ export default function App() {
                     raffles={raffles}
                     recentPurchases={cumulativePurchases}
                     onCreateRaffleClick={() => setIsCreateModalOpen(true)}
-                    onSelectRaffle={(raffle) => setSelectedRaffleId(raffle.id)}
+                    onSelectRaffle={handleSelectRaffle}
                     onTriggerDraw={handleTriggerDraw}
+                    onTriggerManualDraw={handleManualDraw}
                     onToggleRaffleStatus={handleToggleRaffleStatus}
                   />
                 )
