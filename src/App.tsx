@@ -427,6 +427,16 @@ export default function App() {
     setCurrentTab('home');
   };
 
+  const handleToggleRaffleStatus = (raffleId: string) => {
+    setRaffles(current => current.map(r => {
+      if (r.id === raffleId) {
+        const newStatus = r.status === 'active' ? 'closed' : 'active';
+        return { ...r, status: newStatus as any };
+      }
+      return r;
+    }));
+  };
+
   const unreadAlertsCount = notifications.filter(a => !a.read).length;
 
   return (
@@ -480,14 +490,35 @@ export default function App() {
               transition={{ duration: 0.2 }}
             >
               {currentTab === 'dashboard' && (
-                <OrganizerDashboard
-                  currentLanguage={selectedLanguage}
-                  raffles={raffles}
-                  recentPurchases={cumulativePurchases}
-                  onCreateRaffleClick={() => setIsCreateModalOpen(true)}
-                  onSelectRaffle={handleSelectRaffle}
-                  onTriggerDraw={handleTriggerDraw}
-                />
+                selectedRaffleId ? (
+                  <div>
+                    <button
+                      id="back-to-campaign-list"
+                      onClick={() => setSelectedRaffleId(null)}
+                      className="mb-4 text-xs font-semibold text-gray-500 hover:text-emerald-700 transition-colors flex items-center gap-1 cursor-pointer focus:outline-hidden"
+                    >
+                      ← {selectedLanguage === 'es' ? 'Volver al Panel' : selectedLanguage === 'pt' ? 'Voltar ao Painel' : 'Back to Dashboard'}
+                    </button>
+                    <TicketBoard
+                      currentLanguage={selectedLanguage}
+                      raffle={raffles.find(r => r.id === selectedRaffleId)!}
+                      onPayClick={handlePayClick}
+                      onReserveClick={handleReserveClick}
+                      onTriggerDraw={handleTriggerDraw}
+                      userRole={userRole}
+                    />
+                  </div>
+                ) : (
+                  <OrganizerDashboard
+                    currentLanguage={selectedLanguage}
+                    raffles={raffles}
+                    recentPurchases={cumulativePurchases}
+                    onCreateRaffleClick={() => setIsCreateModalOpen(true)}
+                    onSelectRaffle={(raffle) => setSelectedRaffleId(raffle.id)}
+                    onTriggerDraw={handleTriggerDraw}
+                    onToggleRaffleStatus={handleToggleRaffleStatus}
+                  />
+                )
               )}
 
               {currentTab === 'pricing' && (

@@ -10,6 +10,7 @@ interface OrganizerDashboardProps {
   onCreateRaffleClick: () => void;
   onSelectRaffle: (raffle: Raffle) => void;
   onTriggerDraw: (raffleId: string) => void;
+  onToggleRaffleStatus?: (raffleId: string) => void;
 }
 
 export default function OrganizerDashboard({
@@ -18,7 +19,8 @@ export default function OrganizerDashboard({
   recentPurchases,
   onCreateRaffleClick,
   onSelectRaffle,
-  onTriggerDraw
+  onTriggerDraw,
+  onToggleRaffleStatus
 }: OrganizerDashboardProps) {
   const t = translations[currentLanguage];
 
@@ -265,6 +267,16 @@ export default function OrganizerDashboard({
                               >
                                 <Play size={14} fill="currentColor" />
                                 <span>{t.runAutomatedDraw}</span>
+                              </button>
+                            )}
+                            {onToggleRaffleStatus && (raffle.status === 'active' || raffle.status === 'closed' || raffle.status === 'draft') && (
+                              <button
+                                id={`toggle-raffle-status-btn-${raffle.id}`}
+                                onClick={() => onToggleRaffleStatus(raffle.id)}
+                                className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-amber-600 transition-colors cursor-pointer"
+                                title={raffle.status === 'active' ? "Desactivar Rifa" : "Activar Rifa"}
+                              >
+                                <Edit2 size={16} />
                               </button>
                             )}
                             <button
