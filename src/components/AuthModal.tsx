@@ -4,7 +4,8 @@ import {
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword,
   updateProfile,
-  signInWithPopup
+  signInWithPopup,
+  sendEmailVerification
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
@@ -59,7 +60,10 @@ export default function AuthModal({
       errorShortPass: 'La contraseña debe tener al menos 6 caracteres.',
       successCreated: '¡Cuenta creada con éxito! Sincronizando con la base de datos de Firebase...',
       successLogged: '¡Sesión iniciada con éxito! Cargando perfil...',
-      btnGoogle: 'Continuar con Google'
+      btnGoogle: 'Continuar con Google',
+      errorUnverified: 'Por favor verifica tu correo antes de iniciar sesión.',
+      errorInvalidEmail: 'El formato del correo es inválido.',
+      verifyEmailSent: '¡Cuenta creada! Revisa tu correo para activarla.'
     },
     en: {
       titleLogin: 'Welcome Back',
@@ -83,7 +87,10 @@ export default function AuthModal({
       errorShortPass: 'Password must be at least 6 characters long.',
       successCreated: 'Account created successfully! Syncing with Firebase Database...',
       successLogged: 'Logged in successfully! Loading profile...',
-      btnGoogle: 'Continue with Google'
+      btnGoogle: 'Continue with Google',
+      errorUnverified: 'Please verify your email before logging in.',
+      errorInvalidEmail: 'The email format is invalid.',
+      verifyEmailSent: 'Account created! Please check your email to activate it.'
     },
     pt: {
       titleLogin: 'Bem-vindo de volta',
@@ -107,7 +114,10 @@ export default function AuthModal({
       errorShortPass: 'A senha deve conter pelo menos 6 caracteres.',
       successCreated: 'Conta criada com sucesso! Sincronizando com banco de dados Firebase...',
       successLogged: 'Login realizado com sucesso! Carregando perfil...',
-      btnGoogle: 'Continuar com o Google'
+      btnGoogle: 'Continuar com o Google',
+      errorUnverified: 'Por favor, verifique seu e-mail antes de entrar.',
+      errorInvalidEmail: 'O formato do e-mail é inválido.',
+      verifyEmailSent: 'Conta criada! Verifique seu e-mail para ativar a conta.'
     }
   };
 
@@ -126,6 +136,12 @@ export default function AuthModal({
       return;
     }
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setErrorMsg(currentT.errorInvalidEmail || 'El formato del correo es inválido.');
+      return;
+    }
+
     if (password.length < 6) {
       setErrorMsg(currentT.errorShortPass);
       return;
@@ -138,6 +154,13 @@ export default function AuthModal({
         // Firebase Login
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
+
+        if (!user.emailVerified) {
+          await auth.signOut();
+          setErrorMsg(currentT.errorUnverified || 'Please verify your email before logging in.');
+          setLoading(false);
+          return;
+        }
 
         // Fetch additional user profile properties from Firestore if they exist
         const userDocRef = doc(db, 'users', user.uid);
@@ -202,20 +225,15 @@ export default function AuthModal({
         const userDocRef = doc(db, 'users', user.uid);
         await setDoc(userDocRef, profileData);
 
-        setSuccessMsg(currentT.successCreated);
+        // Send Email Verification
+        await sendEmailVerification(user);
+        await auth.signOut();
+
+        setSuccessMsg(currentT.verifyEmailSent || 'Account created! Please verify your email.');
         setTimeout(() => {
-          onAuthSuccess({
-            name: profileData.name,
-            email: profileData.email,
-            avatar: profileData.avatar,
-            tier: profileData.tier,
-            rafflesJoinedCount: profileData.rafflesJoinedCount,
-            ticketsPurchasedCount: profileData.ticketsPurchasedCount,
-            role: profileData.role
-          }, true);
-          onClose();
+          setIsLogin(true);
           setLoading(false);
-        }, 1500);
+        }, 3000);
       }
     } catch (err: any) {
       console.error('Firebase Auth error:', err);
