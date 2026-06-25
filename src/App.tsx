@@ -14,7 +14,7 @@ import { motion, AnimatePresence } from 'motion/react';
 // Firebase core integrations
 import { auth, db } from './firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, addDoc, updateDoc, onSnapshot } from 'firebase/firestore';
 import AuthModal from './components/AuthModal';
 
 const INITIAL_RAFFLES: Raffle[] = [];
@@ -145,11 +145,21 @@ export default function App() {
     setNotifications(prev => [newAlert, ...prev]);
   };
 
-  // Raffles state with local persistence inside localStorage
-  const [raffles, setRaffles] = useState<Raffle[]>(() => {
-    const local = localStorage.getItem('rifasaas_raffles_v2');
-    return local ? JSON.parse(local) : INITIAL_RAFFLES;
-  });
+  // Raffles state with Firebase Firestore listener
+  const [raffles, setRaffles] = useState<Raffle[]>(INITIAL_RAFFLES);
+
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'raffles'), (snapshot) => {
+      const dbRaffles: Raffle[] = [];
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        dbRaffles.push({ id: docSnap.id, ...data } as Raffle);
+      });
+      // Sort by start date (descending) or maintain arbitrary order
+      setRaffles(dbRaffles);
+    });
+    return () => unsub();
+  }, []);
 
   // Alerts inside app
   const [notifications, setNotifications] = useState<AppNotification[]>(() => {
@@ -179,10 +189,7 @@ export default function App() {
     winnerEmail: string;
   } | null>(null);
 
-  // Persists to localStorage whenever modified
-  useEffect(() => {
-    localStorage.setItem('rifasaas_raffles_v2', JSON.stringify(raffles));
-  }, [raffles]);
+  // (Removed localStorage persistence for raffles)
 
   useEffect(() => {
     localStorage.setItem('rifasaas_notifs_v2', JSON.stringify(notifications));
@@ -199,27 +206,27 @@ export default function App() {
 
   // Create new raffle and publish live
   const handleCreateRaffleSubmit = (newRaffle: Omit<Raffle, 'id' | 'soldTickets' | 'reservedTickets' | 'purchases' | 'status'>) => {
-    const created: Raffle = {
+    const created: Omit<Raffle, 'id'> = {
       ...newRaffle,
-      id: `raffle-${Date.now()}`,
       soldTickets: [],
       reservedTickets: [],
       purchases: [],
       status: 'active'
     };
 
-    setRaffles([created, ...raffles]);
-
-    // Push alert
-    const newAlert: AppNotification = {
-      id: `alert-${Date.now()}`,
-      title: 'Campanha Publicada',
-      message: `Tu nueva campaña ${created.name} está activa en ${created.subdomain}.rifasaas.com.`,
-      timestamp: 'Ahora mismo',
-      type: 'success',
-      read: false
-    };
-    setNotifications([newAlert, ...notifications]);
+    addDoc(collection(db, 'raffles'), created)
+      .then((docRef) => {
+        const newAlert: AppNotification = {
+          id: `alert-${Date.now()}`,
+          title: 'Campanha Publicada',
+          message: `Tu nueva campaña ${created.name} está activa en ${created.subdomain}.rifasaas.com.`,
+          timestamp: 'Ahora mismo',
+          type: 'success',
+          read: false
+        };
+        setNotifications(prev => [newAlert, ...prev]);
+      })
+      .catch(console.error);
   };
 
   // Payment checkout button handler
@@ -236,121 +243,116 @@ export default function App() {
       return;
     }
 
-    setRaffles(prevRaffles => {
-      return prevRaffles.map(raffle => {
-        if (raffle.id !== raffleId) return raffle;
+    const raffle = raffles.find(r => r.id === raffleId);
+    if (!raffle) return;
 
-        const newPurchases: TicketPurchase[] = ticketNumbers.map(num => ({
-          ticketNumber: String(num).padStart(3, '0'),
-          buyerName: currentUserProfile.name,
-          buyerEmail: currentUserProfile.email,
-          timestamp: 'Just now',
-          paymentMethod: 'None',
-          status: 'Reserved',
-          amount: raffle.ticketPrice,
-          currency: raffle.currency,
-          raffle: raffle.name
-        }));
+    const newPurchases: TicketPurchase[] = ticketNumbers.map(num => ({
+      ticketNumber: String(num).padStart(3, '0'),
+      buyerName: currentUserProfile.name,
+      buyerEmail: currentUserProfile.email,
+      timestamp: 'Just now',
+      paymentMethod: 'None',
+      status: 'Reserved',
+      amount: raffle.ticketPrice,
+      currency: raffle.currency,
+      raffle: raffle.name
+    }));
 
-        const newReserved = [...raffle.reservedTickets];
-        ticketNumbers.forEach(num => {
-          if (!newReserved.includes(num)) newReserved.push(num);
-        });
-
-        return {
-          ...raffle,
-          reservedTickets: newReserved,
-          purchases: [...newPurchases, ...raffle.purchases]
-        };
-      });
+    const newReserved = [...raffle.reservedTickets];
+    ticketNumbers.forEach(num => {
+      if (!newReserved.includes(num)) newReserved.push(num);
     });
 
-    const newAlert: AppNotification = {
-      id: `alert-${Date.now()}`,
-      title: selectedLanguage === 'es' ? 'Reserva Exitosa' : selectedLanguage === 'pt' ? 'Reserva Bem Sucedida' : 'Reservation Successful',
-      message: selectedLanguage === 'es' 
-        ? `Has reservado los boletos ${ticketNumbers.map(n => '#' + String(n).padStart(3, '0')).join(', ')}. Recuerda pagarlos pronto.` 
-        : `You reserved tickets ${ticketNumbers.map(n => '#' + String(n).padStart(3, '0')).join(', ')}.`,
-      timestamp: 'Ahora mismo',
-      type: 'info',
-      read: false
-    };
-    setNotifications(prev => [newAlert, ...prev]);
+    const docRef = doc(db, 'raffles', raffleId);
+    updateDoc(docRef, {
+      reservedTickets: newReserved,
+      purchases: [...newPurchases, ...raffle.purchases]
+    }).then(() => {
+      const newAlert: AppNotification = {
+        id: `alert-${Date.now()}`,
+        title: selectedLanguage === 'es' ? 'Reserva Exitosa' : selectedLanguage === 'pt' ? 'Reserva Bem Sucedida' : 'Reservation Successful',
+        message: selectedLanguage === 'es' 
+          ? `Has reservado los boletos ${ticketNumbers.map(n => '#' + String(n).padStart(3, '0')).join(', ')}. Recuerda pagarlos pronto.` 
+          : `You reserved tickets ${ticketNumbers.map(n => '#' + String(n).padStart(3, '0')).join(', ')}.`,
+        timestamp: 'Ahora mismo',
+        type: 'info',
+        read: false
+      };
+      setNotifications(prev => [newAlert, ...prev]);
 
-    setSelectedRaffleId(null);
-    setCurrentTab('mytickets');
+      setSelectedRaffleId(null);
+      setCurrentTab('mytickets');
+    }).catch(console.error);
   };
 
   // Handle verified successful payments
   const handlePaymentSuccess = (purchaser: { name: string; email: string; paymentMethod: string }) => {
     if (!activeRaffleIdForCart) return;
 
-    setRaffles(prevRaffles => {
-      return prevRaffles.map(raffle => {
-        if (raffle.id !== activeRaffleIdForCart) return raffle;
+    const raffle = raffles.find(r => r.id === activeRaffleIdForCart);
+    if (!raffle) return;
 
-        // Create transaction metadata
-        const newPurchases: TicketPurchase[] = pendingTicketSelection.map(num => ({
-          ticketNumber: String(num).padStart(3, '0'),
-          buyerName: purchaser.name,
-          buyerEmail: purchaser.email,
-          timestamp: 'Just now',
-          paymentMethod: purchaser.paymentMethod,
-          status: 'Successful',
-          amount: raffle.ticketPrice,
-          currency: raffle.currency,
-          raffle: raffle.name
-        }));
+    // Create transaction metadata
+    const newPurchases: TicketPurchase[] = pendingTicketSelection.map(num => ({
+      ticketNumber: String(num).padStart(3, '0'),
+      buyerName: purchaser.name,
+      buyerEmail: purchaser.email,
+      timestamp: 'Just now',
+      paymentMethod: purchaser.paymentMethod,
+      status: 'Successful',
+      amount: raffle.ticketPrice,
+      currency: raffle.currency,
+      raffle: raffle.name
+    }));
 
-        const originalSold = [...raffle.soldTickets];
-        pendingTicketSelection.forEach(num => {
-          if (!originalSold.includes(num)) originalSold.push(num);
-        });
-
-        // Filter out any prior 'Reserved' purchases for these specific tickets
-        const cleanPurchases = raffle.purchases.filter(p => {
-          if (p.status === 'Reserved' && pendingTicketSelection.map(n => String(n).padStart(3, '0')).includes(p.ticketNumber)) {
-            return false;
-          }
-          return true;
-        });
-
-        // Remove from reservedTickets list
-        const cleanReserved = raffle.reservedTickets.filter(num => !pendingTicketSelection.includes(num));
-
-        return {
-          ...raffle,
-          soldTickets: originalSold,
-          reservedTickets: cleanReserved,
-          purchases: [...newPurchases, ...cleanPurchases]
-        };
-      });
+    const originalSold = [...raffle.soldTickets];
+    pendingTicketSelection.forEach(num => {
+      if (!originalSold.includes(num)) originalSold.push(num);
     });
 
-    // Update player dashboard statistics if the current user bought them
-    if (purchaser.email === currentUserProfile.email) {
-      setCurrentUserProfile(prev => ({
-        ...prev,
-        ticketsPurchasedCount: prev.ticketsPurchasedCount + pendingTicketSelection.length,
-        rafflesJoinedCount: prev.rafflesJoinedCount + 1
-      }));
-    }
+    // Filter out any prior 'Reserved' purchases for these specific tickets
+    const cleanPurchases = raffle.purchases.filter(p => {
+      if (p.status === 'Reserved' && pendingTicketSelection.map(n => String(n).padStart(3, '0')).includes(p.ticketNumber)) {
+        return false;
+      }
+      return true;
+    });
 
-    // Push secure receipts to alerts list
-    const transactionId = `TX-${Date.now().toString().slice(-4)}`;
-    const newAlert: AppNotification = {
-      id: `notif-${Date.now()}`,
-      title: 'Payment Cleared',
-      message: `${purchaser.name} purchased tickets ${pendingTicketSelection.map(n => '#' + String(n).padStart(3, '0')).join(', ')} in ${raffles.find(r => r.id === activeRaffleIdForCart)?.name}. Transaction receipt: ${transactionId}.`,
-      timestamp: 'Just now',
-      type: 'success',
-      read: false
-    };
-    setNotifications([newAlert, ...notifications]);
+    // Remove from reservedTickets list
+    const cleanReserved = raffle.reservedTickets.filter(num => !pendingTicketSelection.includes(num));
 
-    // Clear memory
-    setPendingTicketSelection([]);
-    setActiveRaffleIdForCart(null);
+    const docRef = doc(db, 'raffles', activeRaffleIdForCart);
+    updateDoc(docRef, {
+      soldTickets: originalSold,
+      reservedTickets: cleanReserved,
+      purchases: [...newPurchases, ...cleanPurchases]
+    }).then(() => {
+      // Update player dashboard statistics if the current user bought them
+      if (purchaser.email === currentUserProfile.email) {
+        setCurrentUserProfile(prev => ({
+          ...prev,
+          ticketsPurchasedCount: prev.ticketsPurchasedCount + pendingTicketSelection.length,
+          rafflesJoinedCount: prev.rafflesJoinedCount + 1
+        }));
+      }
+
+      // Push secure receipts to alerts list
+      const transactionId = `TX-${Date.now().toString().slice(-4)}`;
+      const newAlert: AppNotification = {
+        id: `notif-${Date.now()}`,
+        title: 'Payment Cleared',
+        message: `${purchaser.name} purchased tickets ${pendingTicketSelection.map(n => '#' + String(n).padStart(3, '0')).join(', ')} in ${raffle.name}. Transaction receipt: ${transactionId}.`,
+        timestamp: 'Just now',
+        type: 'success',
+        read: false
+      };
+      setNotifications(prev => [newAlert, ...prev]);
+
+      setIsPaymentModalOpen(false);
+      setPendingTicketSelection([]);
+      setActiveRaffleIdForCart(null);
+      setCurrentTab('mytickets');
+    }).catch(console.error);
   };
 
   // Force provably fair automated draw
