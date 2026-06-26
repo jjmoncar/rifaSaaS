@@ -462,7 +462,9 @@ export default function App() {
 
   const handleSelectRaffle = (raffle: Raffle) => {
     setSelectedRaffleId(raffle.id);
-    setCurrentTab('home');
+    if (userRole === 'client') {
+      setCurrentTab('home');
+    }
   };
 
   const handleToggleRaffleStatus = (raffleId: string) => {
