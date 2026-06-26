@@ -49,7 +49,7 @@ export default function Header({
           </button>
           
           <span className="bg-gradient-to-r from-emerald-700 to-emerald-500 text-white text-[10px] sm:text-[11px] font-semibold px-2.5 py-0.5 rounded-full shadow-xs tracking-wide">
-            {t.proPlan}
+            {currentLanguage === 'es' ? `Plan ${userProfile.tier}` : currentLanguage === 'pt' ? `Plano ${userProfile.tier}` : `${userProfile.tier} Plan`}
           </span>
         </div>
 
