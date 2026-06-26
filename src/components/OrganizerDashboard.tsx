@@ -199,6 +199,7 @@ export default function OrganizerDashboard({
                   <tr className="bg-gray-100 border-b border-gray-150 text-[10px] font-bold text-gray-500 uppercase tracking-widest">
                     <th className="px-6 py-3">{t.campaign}</th>
                     <th className="px-6 py-3">{t.status}</th>
+                    <th className="px-6 py-3">{t.pricePerTicket}</th>
                     <th className="px-6 py-3">{t.revenue}</th>
                     <th className="px-6 py-3 text-center">{t.actions}</th>
                   </tr>
@@ -247,6 +248,10 @@ export default function OrganizerDashboard({
                             {raffle.status === 'drawing' && t.drawing}
                             {raffle.status === 'drawn' && t.drawn}
                           </span>
+                        </td>
+                        <td className="px-6 py-4.5 font-semibold text-sm text-gray-700">
+                          {raffle.currency === 'USD' ? '$' : raffle.currency === 'BRL' ? 'R$' : 'π'}
+                          {raffle.ticketPrice.toLocaleString('en-US', { minimumFractionDigits: raffle.currency === 'Pi' ? 0 : 2, maximumFractionDigits: 2 })}
                         </td>
                         <td className="px-6 py-4.5 font-bold text-sm text-gray-800">
                           {raffle.currency === 'USD' ? '$' : raffle.currency === 'BRL' ? 'R$' : 'π'}
