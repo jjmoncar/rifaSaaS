@@ -1,7 +1,7 @@
 import React from 'react';
 import { translations } from '../translations';
 import { Language, Raffle, TicketPurchase } from '../types';
-import { Play, Eye, Edit2, TrendingUp, Users, Ticket, DollarSign, Award, ArrowUpRight } from 'lucide-react';
+import { Play, Eye, Edit2, TrendingUp, Users, Ticket, DollarSign, Award, ArrowUpRight, CheckCircle } from 'lucide-react';
 
 interface OrganizerDashboardProps {
   currentLanguage: Language;
@@ -11,6 +11,7 @@ interface OrganizerDashboardProps {
   onSelectRaffle: (raffle: Raffle) => void;
   onTriggerDraw: (raffleId: string) => void;
   onEditRaffle: (raffle: Raffle) => void;
+  onPayPrize: (raffleId: string) => void;
   onToggleRaffleStatus?: (raffleId: string) => void;
   onTriggerManualDraw: (raffleId: string, ticketNum: number) => void;
 }
@@ -22,6 +23,7 @@ export default function OrganizerDashboard({
   onCreateRaffleClick,
   onSelectRaffle,
   onEditRaffle,
+  onPayPrize,
   onTriggerDraw,
   onToggleRaffleStatus,
   onTriggerManualDraw
@@ -301,6 +303,25 @@ export default function OrganizerDashboard({
                                 <Edit2 size={16} />
                               </button>
                             )}
+                            
+                            {raffle.status === 'drawn' && (
+                              raffle.prizePaid ? (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-bold rounded-lg bg-emerald-50 text-emerald-700 uppercase tracking-wider border border-emerald-100">
+                                  <CheckCircle size={14} className="text-emerald-500" />
+                                  Premio Pagado
+                                </span>
+                              ) : (
+                                <button
+                                  onClick={() => onPayPrize(raffle.id)}
+                                  title="Pagar Premio"
+                                  className="px-3 py-1.5 border border-blue-300 hover:border-blue-600 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 transition-colors cursor-pointer flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider shadow-xs"
+                                >
+                                  <DollarSign size={14} strokeWidth={3} />
+                                  Pagar Premio
+                                </button>
+                              )
+                            )}
+
                             <button
                               id={`edit-raffle-btn-${raffle.id}`}
                               onClick={() => onEditRaffle(raffle)}

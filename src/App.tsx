@@ -6,6 +6,7 @@ import TicketBoard from './components/TicketBoard';
 import PaymentModal from './components/PaymentModal';
 import ClientDashboard from './components/ClientDashboard';
 import PricingPlans from './components/PricingPlans';
+import PrizePaymentModal from './components/PrizePaymentModal';
 import { Raffle, TicketPurchase, AppNotification, UserProfile, Language } from './types';
 import { translations } from './translations';
 import { Gift, Award, Calendar, Bell, Volume2, HelpCircle, Flame, CheckCircle2, RefreshCw } from 'lucide-react';
@@ -176,6 +177,8 @@ export default function App() {
   const [editingRaffle, setEditingRaffle] = useState<Raffle | null>(null);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isAlertsOpen, setIsAlertsOpen] = useState(false);
+  const [isPrizePaymentModalOpen, setIsPrizePaymentModalOpen] = useState(false);
+  const [selectedRaffleForPrize, setSelectedRaffleForPrize] = useState<Raffle | null>(null);
 
   // Cart properties
   const [pendingTicketSelection, setPendingTicketSelection] = useState<number[]>([]);
@@ -494,6 +497,35 @@ export default function App() {
     setIsCreateModalOpen(true);
   };
 
+  const handlePayPrizeClick = (raffleId: string) => {
+    const raffle = raffles.find(r => r.id === raffleId);
+    if (raffle) {
+      setSelectedRaffleForPrize(raffle);
+      setIsPrizePaymentModalOpen(true);
+    }
+  };
+
+  const handlePayPrizeSuccess = () => {
+    if (!selectedRaffleForPrize) return;
+    
+    const docRef = doc(db, 'raffles', selectedRaffleForPrize.id);
+    updateDoc(docRef, {
+      prizePaid: true
+    }).then(() => {
+      const newAlert: AppNotification = {
+        id: `alert-${Date.now()}`,
+        title: selectedLanguage === 'es' ? 'Pago Exitoso' : 'Payment Successful',
+        message: selectedLanguage === 'es' 
+          ? `El premio para la campaña ${selectedRaffleForPrize.name} ha sido pagado.`
+          : `The prize for campaign ${selectedRaffleForPrize.name} has been paid.`,
+        timestamp: 'Ahora mismo',
+        type: 'success',
+        read: false
+      };
+      setNotifications(prev => [newAlert, ...prev]);
+    }).catch(console.error);
+  };
+
   const handleToggleRaffleStatus = (raffleId: string) => {
     const raffle = raffles.find(r => r.id === raffleId);
     if (!raffle) return;
@@ -585,6 +617,7 @@ export default function App() {
                     }}
                     onSelectRaffle={handleSelectRaffle}
                     onEditRaffle={handleEditRaffle}
+                    onPayPrize={handlePayPrizeClick}
                     onTriggerDraw={handleTriggerDraw}
                     onTriggerManualDraw={handleManualDraw}
                     onToggleRaffleStatus={handleToggleRaffleStatus}
@@ -924,6 +957,20 @@ export default function App() {
             setActiveRaffleIdForCart(null);
           }}
           onPaymentSuccess={handlePaymentSuccess}
+        />
+      )}
+
+      {/* PRIZE PAYMENT MODAL POPUP */}
+      {selectedRaffleForPrize && (
+        <PrizePaymentModal
+          currentLanguage={selectedLanguage}
+          raffle={selectedRaffleForPrize}
+          isOpen={isPrizePaymentModalOpen}
+          onClose={() => {
+            setIsPrizePaymentModalOpen(false);
+            setSelectedRaffleForPrize(null);
+          }}
+          onPaymentSuccess={handlePayPrizeSuccess}
         />
       )}
 
