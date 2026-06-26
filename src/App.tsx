@@ -256,6 +256,10 @@ export default function App() {
 
   // Payment checkout button handler
   const handlePayClick = (raffleId: string, ticketNumbers: number[]) => {
+    if (!isLoggedIn) {
+      setIsAuthModalOpen(true);
+      return;
+    }
     setPendingTicketSelection(ticketNumbers);
     setActiveRaffleIdForCart(raffleId);
     setIsPaymentModalOpen(true);
