@@ -48,13 +48,13 @@ export default function OrganizerDashboard({
       }
     });
   });
-  const uniqueBuyersCount = uniqueEmails.size > 0 ? uniqueEmails.size : 142; // default nicely to the mock image's 142 value + new ones
+  const uniqueBuyersCount = uniqueEmails.size;
 
   // Get first active raffle for the Progress HUD Card
   const activeRaffle = raffles.find(r => r.status === 'active' || r.status === 'drawing') || raffles[0];
   const completionPercent = activeRaffle 
     ? Math.min(100, Math.round((activeRaffle.soldTickets.length / activeRaffle.totalTickets) * 100))
-    : 89;
+    : 0;
 
   return (
     <div className="space-y-6">
@@ -86,9 +86,7 @@ export default function OrganizerDashboard({
             <div className="p-3 bg-emerald-50 rounded-xl text-emerald-700">
               <DollarSign size={20} />
             </div>
-            <span className="text-emerald-700 font-bold text-xs bg-emerald-50 px-2 py-0.5 rounded-full flex items-center gap-0.5">
-              +12.5%
-            </span>
+
           </div>
           <div className="mt-4">
             <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">{t.totalRevenue}</p>
@@ -104,9 +102,7 @@ export default function OrganizerDashboard({
             <div className="p-3 bg-emerald-50 rounded-xl text-emerald-700">
               <Ticket size={20} />
             </div>
-            <span className="text-emerald-700 font-bold text-xs bg-emerald-50 px-2 py-0.5 rounded-full">
-              +8%
-            </span>
+
           </div>
           <div className="mt-4">
             <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">{t.ticketsSold}</p>
@@ -122,9 +118,7 @@ export default function OrganizerDashboard({
             <div className="p-3 bg-emerald-50 rounded-xl text-emerald-800">
               <Users size={20} />
             </div>
-            <span className="text-gray-500 font-semibold text-xs py-0.5">
-              Steady
-            </span>
+
           </div>
           <div className="mt-4">
             <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">{t.uniqueBuyers}</p>
@@ -140,9 +134,7 @@ export default function OrganizerDashboard({
             <div className="p-3 bg-emerald-50 rounded-xl text-emerald-700">
               <TrendingUp size={20} />
             </div>
-            <span className="text-emerald-700 font-bold text-xs bg-emerald-50 px-2 py-0.5 rounded-full">
-              Target Met
-            </span>
+
           </div>
           <div className="mt-4">
             <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">{t.completion}</p>

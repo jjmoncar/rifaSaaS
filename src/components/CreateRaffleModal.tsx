@@ -41,7 +41,6 @@ export default function CreateRaffleModal({
   const [totalTickets, setTotalTickets] = useState(100);
   const [ticketPrice, setTicketPrice] = useState(10.0);
   const [currency, setCurrency] = useState('USD');
-  const [subdomain, setSubdomain] = useState('');
   const [startDate, setStartDate] = useState(() => {
     const today = new Date();
     today.setHours(today.getHours() + 1);
@@ -52,7 +51,7 @@ export default function CreateRaffleModal({
     nextWeek.setDate(nextWeek.getDate() + 7);
     return nextWeek.toISOString().slice(0, 16);
   });
-  const [drawMethod, setDrawMethod] = useState<'Automatic' | 'National Lottery' | 'Live Stream'>('Automatic');
+  const [drawMethod, setDrawMethod] = useState<'Automatic' | 'Live Stream'>('Automatic');
 
   const [isPublishing, setIsPublishing] = useState(false);
   const [showValidationWarning, setShowValidationWarning] = useState(false);
@@ -72,7 +71,7 @@ export default function CreateRaffleModal({
 
   const handlePublish = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !description || !subdomain) {
+    if (!name || !description) {
       setShowValidationWarning(true);
       return;
     }
@@ -87,7 +86,7 @@ export default function CreateRaffleModal({
         totalTickets: Number(totalTickets),
         ticketPrice: Number(ticketPrice),
         currency,
-        subdomain,
+        subdomain: name.toLowerCase().replace(/[^a-z0-9-]/g, '') || 'raffle',
         startDate,
         drawDate,
         drawMethod
@@ -97,7 +96,6 @@ export default function CreateRaffleModal({
       // Reset form
       setName('');
       setDescription('');
-      setSubdomain('');
     }, 1200);
   };
 
@@ -144,7 +142,7 @@ export default function CreateRaffleModal({
               <AlertCircle className="shrink-0 text-amber-600 mt-0.5" size={18} />
               <div>
                 <p className="font-semibold">Faltan campos requeridos</p>
-                <p className="text-xs mt-0.5">Por favor completa el nombre de la rifa, descripción y subdominio para continuar.</p>
+                <p className="text-xs mt-0.5">Por favor completa el nombre de la rifa y descripción para continuar.</p>
               </div>
             </div>
           )}
@@ -166,9 +164,6 @@ export default function CreateRaffleModal({
                   value={name}
                   onChange={(e) => {
                     setName(e.target.value);
-                    if (!subdomain) {
-                      setSubdomain(e.target.value.toLowerCase().replace(/[^a-z0-9]/g, ''));
-                    }
                   }}
                   placeholder={t.raffleNamePlace}
                   className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-hidden focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 focus:bg-white transition-all"
@@ -294,9 +289,7 @@ export default function CreateRaffleModal({
                   onChange={(e) => {
                     const curr = e.target.value;
                     setCurrency(curr);
-                    if (curr === 'Pi') {
-                      setTicketPrice(5.0);
-                    } else if (curr === 'BRL') {
+                    if (curr === 'BRL') {
                       setTicketPrice(50.0);
                     } else {
                       setTicketPrice(10.0);
@@ -306,27 +299,10 @@ export default function CreateRaffleModal({
                 >
                   <option value="USD">USD - US Dollar ($)</option>
                   <option value="BRL">BRL - Brazilian Real (R$)</option>
-                  <option value="Pi">Pi - Pi Network (π)</option>
                 </select>
               </div>
 
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-gray-600 uppercase tracking-widest">{t.subdomain}</label>
-                <div className="flex items-center">
-                  <input
-                    id="form-raffle-subdomain"
-                    type="text"
-                    required
-                    value={subdomain}
-                    onChange={(e) => setSubdomain(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-                    placeholder="my-giveaway"
-                    className="flex-1 min-w-0 px-4.5 py-2.5 bg-gray-50 border border-gray-200 rounded-l-lg text-sm text-gray-900 focus:outline-hidden focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 focus:bg-white transition-all"
-                  />
-                  <div className="px-3.5 py-2.5 bg-gray-150 border border-l-0 border-gray-200 rounded-r-lg text-xs font-semibold text-gray-500 whitespace-nowrap">
-                    .rifasaas.com
-                  </div>
-                </div>
-              </div>
+
             </div>
           </section>
 
@@ -371,7 +347,6 @@ export default function CreateRaffleModal({
                   className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-hidden focus:border-emerald-600 focus:bg-white cursor-pointer"
                 >
                   <option value="Automatic">{t.fairSystem}</option>
-                  <option value="National Lottery">{t.nationalLottery}</option>
                   <option value="Live Stream">{t.liveStream}</option>
                 </select>
                 <p className="text-xs text-gray-500 italic mt-0.5">{t.automaticRecommend}</p>

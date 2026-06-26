@@ -609,7 +609,7 @@ export default function App() {
                             {selectedLanguage === 'es' ? 'Sorteos de Alta Gama' : selectedLanguage === 'pt' ? 'Sorteios de Alta Gama' : 'High-End Verified Giveaways'}
                           </h1>
                           <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-normal">
-                            {selectedLanguage === 'es' ? 'Participa de forma segura mediante métodos cifrados instantáneos Pix, Tarjeta de Crédito o Pi Network. Transparencia certificada.' : 'Enter raffle campaigns backed by provably safe automated distribution. Every ticket certified on public ledgers.'}
+                            {selectedLanguage === 'es' ? 'Participa de forma segura mediante métodos cifrados instantáneos Pix o Tarjeta de Crédito. Transparencia certificada.' : 'Enter raffle campaigns backed by provably safe automated distribution. Every ticket certified on public ledgers.'}
                           </p>
                         </div>
                         <div className="absolute right-0 bottom-0 top-0 w-2/5 opacity-15 sm:opacity-30 pointer-events-none bg-[radial-gradient(ellipse_at_bottom_right,_var(--tw-gradient-stops))] from-emerald-500/80 via-transparent to-transparent" />
