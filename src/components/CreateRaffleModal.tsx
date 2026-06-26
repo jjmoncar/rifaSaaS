@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { translations } from '../translations';
 import { Language, Raffle } from '../types';
 import { X, Info, Ticket, Calendar, Check, AlertCircle } from 'lucide-react';
@@ -9,6 +9,7 @@ interface CreateRaffleModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (raffle: Omit<Raffle, 'id' | 'soldTickets' | 'reservedTickets' | 'purchases' | 'status'>) => void;
+  editingRaffle?: Raffle | null;
 }
 
 const PRESET_IMAGES = [
@@ -30,7 +31,8 @@ export default function CreateRaffleModal({
   currentLanguage,
   isOpen,
   onClose,
-  onSubmit
+  onSubmit,
+  editingRaffle
 }: CreateRaffleModalProps) {
   const t = translations[currentLanguage];
 
@@ -55,6 +57,27 @@ export default function CreateRaffleModal({
 
   const [isPublishing, setIsPublishing] = useState(false);
   const [showValidationWarning, setShowValidationWarning] = useState(false);
+
+  useEffect(() => {
+    if (editingRaffle) {
+      setName(editingRaffle.name);
+      setDescription(editingRaffle.description);
+      setCoverImage(editingRaffle.coverImage);
+      setTotalTickets(editingRaffle.totalTickets);
+      setTicketPrice(editingRaffle.ticketPrice);
+      setCurrency(editingRaffle.currency);
+      setStartDate(editingRaffle.startDate);
+      setDrawDate(editingRaffle.drawDate);
+      setDrawMethod(editingRaffle.drawMethod as any);
+    } else {
+      setName('');
+      setDescription('');
+      setCoverImage(PRESET_IMAGES[0].url);
+      setTotalTickets(100);
+      setTicketPrice(10.0);
+      setCurrency('USD');
+    }
+  }, [editingRaffle, isOpen]);
 
   if (!isOpen) return null;
 
@@ -121,9 +144,9 @@ export default function CreateRaffleModal({
         <div className="px-6 py-4 bg-white border-b border-gray-200 flex items-center justify-between sticky top-0 z-10">
           <div>
             <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-              <span className="text-emerald-700 font-bold">{t.newRaffleTitle}</span>
+              <span className="text-emerald-700 font-bold">{editingRaffle ? "Editar Rifa" : t.newRaffleTitle}</span>
             </h2>
-            <p className="text-xs text-gray-500 mt-0.5">{t.newRaffleSub}</p>
+            <p className="text-xs text-gray-500 mt-0.5">{editingRaffle ? "Actualiza los detalles de tu campaña." : t.newRaffleSub}</p>
           </div>
           <button
             id="close-modal-btn"

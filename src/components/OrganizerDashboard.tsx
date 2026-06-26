@@ -10,6 +10,7 @@ interface OrganizerDashboardProps {
   onCreateRaffleClick: () => void;
   onSelectRaffle: (raffle: Raffle) => void;
   onTriggerDraw: (raffleId: string) => void;
+  onEditRaffle: (raffle: Raffle) => void;
   onToggleRaffleStatus?: (raffleId: string) => void;
   onTriggerManualDraw: (raffleId: string, ticketNum: number) => void;
 }
@@ -20,6 +21,7 @@ export default function OrganizerDashboard({
   recentPurchases,
   onCreateRaffleClick,
   onSelectRaffle,
+  onEditRaffle,
   onTriggerDraw,
   onToggleRaffleStatus,
   onTriggerManualDraw
@@ -294,6 +296,14 @@ export default function OrganizerDashboard({
                                 <Edit2 size={16} />
                               </button>
                             )}
+                            <button
+                              id={`edit-raffle-btn-${raffle.id}`}
+                              onClick={() => onEditRaffle(raffle)}
+                              className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-blue-600 transition-colors cursor-pointer"
+                              title="Editar Rifa"
+                            >
+                              <Edit2 size={16} />
+                            </button>
                             <button
                               id={`view-raffle-btn-${raffle.id}`}
                               onClick={() => onSelectRaffle(raffle)}

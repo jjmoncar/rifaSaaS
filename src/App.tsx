@@ -172,8 +172,8 @@ export default function App() {
   const [currentTab, setCurrentTab] = useState<string>('home');
   const [selectedRaffleId, setSelectedRaffleId] = useState<string | null>(null);
 
-  // Modal displays
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [editingRaffle, setEditingRaffle] = useState<Raffle | null>(null);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isAlertsOpen, setIsAlertsOpen] = useState(false);
 
@@ -206,27 +206,49 @@ export default function App() {
 
   // Create new raffle and publish live
   const handleCreateRaffleSubmit = (newRaffle: Omit<Raffle, 'id' | 'soldTickets' | 'reservedTickets' | 'purchases' | 'status'>) => {
-    const created: Omit<Raffle, 'id'> = {
-      ...newRaffle,
-      soldTickets: [],
-      reservedTickets: [],
-      purchases: [],
-      status: 'active'
-    };
+    if (editingRaffle) {
+      const docRef = doc(db, 'raffles', editingRaffle.id);
+      updateDoc(docRef, newRaffle)
+        .then(() => {
+          const newAlert: AppNotification = {
+            id: `alert-${Date.now()}`,
+            title: selectedLanguage === 'es' ? 'Campaña Actualizada' : selectedLanguage === 'pt' ? 'Campanha Atualizada' : 'Campaign Updated',
+            message: selectedLanguage === 'es' 
+              ? `La campaña ${newRaffle.name} ha sido actualizada.` 
+              : `The campaign ${newRaffle.name} has been updated.`,
+            timestamp: 'Ahora mismo',
+            type: 'success',
+            read: false
+          };
+          setNotifications(prev => [newAlert, ...prev]);
+          setEditingRaffle(null);
+        })
+        .catch(console.error);
+    } else {
+      const created: Omit<Raffle, 'id'> = {
+        ...newRaffle,
+        soldTickets: [],
+        reservedTickets: [],
+        purchases: [],
+        status: 'active'
+      };
 
-    addDoc(collection(db, 'raffles'), created)
-      .then((docRef) => {
-        const newAlert: AppNotification = {
-          id: `alert-${Date.now()}`,
-          title: 'Campanha Publicada',
-          message: `Tu nueva campaña ${created.name} está activa en ${created.subdomain}.rifasaas.com.`,
-          timestamp: 'Ahora mismo',
-          type: 'success',
-          read: false
-        };
-        setNotifications(prev => [newAlert, ...prev]);
-      })
-      .catch(console.error);
+      addDoc(collection(db, 'raffles'), created)
+        .then((docRef) => {
+          const newAlert: AppNotification = {
+            id: `alert-${Date.now()}`,
+            title: selectedLanguage === 'es' ? 'Campaña Publicada' : selectedLanguage === 'pt' ? 'Campanha Publicada' : 'Campaign Published',
+            message: selectedLanguage === 'es' 
+              ? `Tu nueva campaña ${created.name} está activa.` 
+              : `Your new campaign ${created.name} is active.`,
+            timestamp: 'Ahora mismo',
+            type: 'success',
+            read: false
+          };
+          setNotifications(prev => [newAlert, ...prev]);
+        })
+        .catch(console.error);
+    }
   };
 
   // Payment checkout button handler
@@ -467,6 +489,11 @@ export default function App() {
     }
   };
 
+  const handleEditRaffle = (raffle: Raffle) => {
+    setEditingRaffle(raffle);
+    setIsCreateModalOpen(true);
+  };
+
   const handleToggleRaffleStatus = (raffleId: string) => {
     const raffle = raffles.find(r => r.id === raffleId);
     if (!raffle) return;
@@ -552,8 +579,12 @@ export default function App() {
                     currentLanguage={selectedLanguage}
                     raffles={raffles}
                     recentPurchases={cumulativePurchases}
-                    onCreateRaffleClick={() => setIsCreateModalOpen(true)}
+                    onCreateRaffleClick={() => {
+                      setEditingRaffle(null);
+                      setIsCreateModalOpen(true);
+                    }}
                     onSelectRaffle={handleSelectRaffle}
+                    onEditRaffle={handleEditRaffle}
                     onTriggerDraw={handleTriggerDraw}
                     onTriggerManualDraw={handleManualDraw}
                     onToggleRaffleStatus={handleToggleRaffleStatus}
@@ -872,8 +903,12 @@ export default function App() {
       <CreateRaffleModal
         currentLanguage={selectedLanguage}
         isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
+        onClose={() => {
+          setIsCreateModalOpen(false);
+          setEditingRaffle(null);
+        }}
         onSubmit={handleCreateRaffleSubmit}
+        editingRaffle={editingRaffle}
       />
 
       {/* SIMULATED PAYMENT DIALOG MODAL POPUP OVERLAY */}
