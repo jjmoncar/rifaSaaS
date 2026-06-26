@@ -957,6 +957,8 @@ export default function App() {
             setActiveRaffleIdForCart(null);
           }}
           onPaymentSuccess={handlePaymentSuccess}
+          prefillName={isLoggedIn ? currentUserProfile.name : ''}
+          prefillEmail={isLoggedIn ? currentUserProfile.email : ''}
         />
       )}
 

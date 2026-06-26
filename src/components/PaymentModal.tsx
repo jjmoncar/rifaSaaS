@@ -11,6 +11,8 @@ interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
   onPaymentSuccess: (purchaserData: { name: string; email: string; paymentMethod: string }) => void;
+  prefillName?: string;
+  prefillEmail?: string;
 }
 
 export default function PaymentModal({
@@ -19,13 +21,15 @@ export default function PaymentModal({
   ticketNumbers,
   isOpen,
   onClose,
-  onPaymentSuccess
+  onPaymentSuccess,
+  prefillName = '',
+  prefillEmail = ''
 }: PaymentModalProps) {
   const t = translations[currentLanguage];
 
   // States
-  const [buyerName, setBuyerName] = useState('');
-  const [buyerEmail, setBuyerEmail] = useState('');
+  const [buyerName, setBuyerName] = useState(prefillName);
+  const [buyerEmail, setBuyerEmail] = useState(prefillEmail);
   const [paymentMethod, setPaymentMethod] = useState(() => {
     if (raffle.currency === 'Pi') return 'Pi Net Wallet';
     if (raffle.currency === 'BRL') return 'Pix (Brazilian Instant)';
