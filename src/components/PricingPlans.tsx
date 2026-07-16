@@ -10,7 +10,7 @@ interface PricingPlansProps {
 
 export default function PricingPlans({ currentLanguage }: PricingPlansProps) {
   const t = translations[currentLanguage];
-  const [selectedPlan, setSelectedPlan] = useState<'starter' | 'pro' | 'enterprise'>('pro');
+  const [selectedPlan, setSelectedPlan] = useState<'starter' | 'pro'>('pro');
 
   return (
     <div className="space-y-12 py-4">
@@ -27,7 +27,7 @@ export default function PricingPlans({ currentLanguage }: PricingPlansProps) {
       </div>
 
       {/* Pricing Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto items-stretch">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto items-stretch">
         
         {/* Starter Plan */}
         <div 
@@ -57,10 +57,6 @@ export default function PricingPlans({ currentLanguage }: PricingPlansProps) {
               <li className="flex items-start gap-3.5 text-xs text-gray-600 font-medium leading-relaxed">
                 <Check className="text-emerald-700 shrink-0 mt-0.5" size={15} strokeWidth={3} />
                 <span>{t.maxTicketLimit}</span>
-              </li>
-              <li className="flex items-start gap-3.5 text-xs text-gray-600 font-medium leading-relaxed">
-                <Check className="text-emerald-700 shrink-0 mt-0.5" size={15} strokeWidth={3} />
-                <span>{t.basicSubdomain}</span>
               </li>
             </ul>
           </div>
@@ -121,7 +117,7 @@ export default function PricingPlans({ currentLanguage }: PricingPlansProps) {
               </li>
               <li className="flex items-start gap-3.5 text-xs text-gray-600 font-medium leading-relaxed">
                 <Check className="text-emerald-700 shrink-0 mt-0.5" size={15} strokeWidth={3} />
-                <span>{t.advancedDashboard}</span>
+                <span>{t.manualDraw}</span>
               </li>
             </ul>
           </div>
@@ -131,59 +127,6 @@ export default function PricingPlans({ currentLanguage }: PricingPlansProps) {
             className="w-full mt-8 py-3.5 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs rounded-xl uppercase tracking-wider transition-all shadow-md shadow-emerald-700/10 cursor-pointer"
           >
             {t.goProNow}
-          </button>
-        </div>
-
-        {/* Enterprise Plan */}
-        <div 
-          onClick={() => setSelectedPlan('enterprise')}
-          className={`bg-white rounded-2xl border p-6.5 flex flex-col justify-between transition-all cursor-pointer relative ${
-            selectedPlan === 'enterprise'
-              ? 'border-emerald-600 ring-2 ring-emerald-600/10 scale-101 shadow-xl'
-              : 'border-gray-205 hover:border-emerald-600/50 shadow-xs'
-          }`}
-        >
-          <div className="space-y-5">
-            <div>
-              <h3 className="text-lg font-extrabold text-gray-900">{t.enterpriseTitle}</h3>
-              <p className="text-xs text-gray-400 mt-1">{t.enterpriseDesc}</p>
-            </div>
-            
-            <div className="flex items-baseline">
-              <span className="text-4xl font-black text-gray-909">{t.enterprisePrice}</span>
-              <span className="text-xs text-gray-400 font-bold ml-1.5">{t.enterprisePriceUnit}</span>
-            </div>
-
-            {/* Feature list */}
-            <ul className="space-y-3 pt-3 border-t border-gray-100">
-              <li className="flex items-start gap-3.5 text-xs text-gray-600 font-medium leading-relaxed">
-                <Check className="text-emerald-700 shrink-0 mt-0.5" size={15} strokeWidth={3} />
-                <span>{t.unlimitedRaffles}</span>
-              </li>
-              <li className="flex items-start gap-3.5 text-xs text-gray-600 font-medium leading-relaxed">
-                <Check className="text-emerald-700 shrink-0 mt-0.5" size={15} strokeWidth={3} />
-                <span>{t.customDomain}</span>
-              </li>
-              <li className="flex items-start gap-3.5 text-xs text-gray-600 font-medium leading-relaxed">
-                <Check className="text-emerald-700 shrink-0 mt-0.5" size={15} strokeWidth={3} />
-                <span>{t.apiAccess}</span>
-              </li>
-              <li className="flex items-start gap-3.5 text-xs text-gray-600 font-medium leading-relaxed">
-                <Check className="text-emerald-700 shrink-0 mt-0.5" size={15} strokeWidth={3} />
-                <span>{t.prioritySupport}</span>
-              </li>
-            </ul>
-          </div>
-
-          <button
-            id="plan-btn-enterprise"
-            className={`w-full mt-8 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all border ${
-              selectedPlan === 'enterprise'
-                ? 'bg-emerald-700 border-emerald-700 text-white shadow-md'
-                : 'bg-white border-gray-250 text-gray-600 hover:text-emerald-700 hover:border-emerald-600'
-            }`}
-          >
-            {t.contactSales}
           </button>
         </div>
 
