@@ -260,6 +260,18 @@ export default function App() {
       setIsAuthModalOpen(true);
       return;
     }
+
+    // Bloquear compra si la rifa no está activa o pasó la fecha de sorteo
+    const raffle = raffles.find(r => r.id === raffleId);
+    if (!raffle || raffle.status !== 'active' || new Date() > new Date(raffle.drawDate)) {
+      alert(selectedLanguage === 'es'
+        ? 'No se pueden comprar boletos en una rifa que ya fue cerrada o sorteada.'
+        : selectedLanguage === 'pt'
+        ? 'Não é possível comprar bilhetes em um sorteio que já foi encerrado ou realizado.'
+        : 'Cannot purchase tickets for a raffle that has already been closed or drawn.');
+      return;
+    }
+
     setPendingTicketSelection(ticketNumbers);
     setActiveRaffleIdForCart(raffleId);
     setIsPaymentModalOpen(true);
@@ -274,6 +286,16 @@ export default function App() {
 
     const raffle = raffles.find(r => r.id === raffleId);
     if (!raffle) return;
+
+    // Bloquear reserva si la rifa no está activa o pasó la fecha de sorteo
+    if (raffle.status !== 'active' || new Date() > new Date(raffle.drawDate)) {
+      alert(selectedLanguage === 'es'
+        ? 'No se pueden reservar boletos en una rifa que ya fue cerrada o sorteada.'
+        : selectedLanguage === 'pt'
+        ? 'Não é possível reservar bilhetes em um sorteio que já foi encerrado ou realizado.'
+        : 'Cannot reserve tickets for a raffle that has already been closed or drawn.');
+      return;
+    }
 
     const newPurchases: TicketPurchase[] = ticketNumbers.map(num => ({
       ticketNumber: String(num).padStart(3, '0'),

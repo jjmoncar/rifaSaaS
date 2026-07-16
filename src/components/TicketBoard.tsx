@@ -67,7 +67,12 @@ export default function TicketBoard({
     return () => clearInterval(intervalId);
   }, [isDrawing, raffle.totalTickets]);
 
+  // Rifa cerrada/sorteada o si ya pasó su fecha de sorteo: no se puede comprar ni reservar
+  const isPastDrawDate = new Date() > new Date(raffle.drawDate);
+  const isRaffleOpen = raffle.status === 'active' && !isPastDrawDate;
+
   const toggleSelectTicket = (num: number) => {
+    if (!isRaffleOpen) return; // bloquear si la rifa no está activa
     if (raffle.soldTickets.includes(num) || raffle.reservedTickets.includes(num)) return;
 
     if (selectedTickets.includes(num)) {
@@ -318,16 +323,22 @@ export default function TicketBoard({
                   id={`ticket-tile-${num}`}
                   key={num}
                   type="button"
-                  disabled={status === 'sold' || status === 'reserved'}
+                  disabled={!isRaffleOpen || status === 'sold' || status === 'reserved'}
                   onClick={() => toggleSelectTicket(num)}
                   title={
-                    status === 'sold'
+                    !isRaffleOpen
+                      ? 'Esta rifa ya fue realizada'
+                      : status === 'sold'
                       ? 'Sold of this campaign'
                       : status === 'reserved'
                       ? t.beingPurchasedInfo
                       : `Ticket #${numFormatted}`
                   }
-                  className={`aspect-square w-full rounded-xl border flex items-center justify-center font-mono font-bold text-xs md:text-sm cursor-pointer select-none transition-all ${getTicketColorStyle(num, status)}`}
+                  className={`aspect-square w-full rounded-xl border flex items-center justify-center font-mono font-bold text-xs md:text-sm select-none transition-all ${
+                    !isRaffleOpen
+                      ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed opacity-60'
+                      : getTicketColorStyle(num, status)
+                  }`}
                 >
                   {numFormatted}
                 </button>
@@ -341,8 +352,22 @@ export default function TicketBoard({
         )}
       </section>
 
-      {/* Bottom Sticky select cart/checkout panel */}
-      {selectedTickets.length > 0 && (
+      {/* Banner de rifa cerrada/sorteada */}
+      {!isRaffleOpen && raffle.status !== 'drawing' && (
+        <div className="fixed bottom-0 left-0 right-0 z-45 px-4 py-4 bg-gray-900/95 backdrop-blur-md border-t border-gray-700 shadow-xl">
+          <div className="max-w-7xl mx-auto w-full flex items-center justify-center gap-3">
+            <Lock size={18} className="text-gray-400 shrink-0" />
+            <p className="text-sm font-bold text-gray-300">
+              {raffle.status === 'drawn'
+                ? '🏆 Esta rifa ya fue sorteada. No se pueden comprar ni reservar boletos.'
+                : '🔒 Esta rifa está cerrada. La compra de boletos no está disponible.'}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Bottom Sticky select cart/checkout panel — solo si la rifa está activa */}
+      {isRaffleOpen && selectedTickets.length > 0 && (
         <div className="fixed bottom-0 left-0 right-0 z-45 px-4 py-4 bg-white/95 backdrop-blur-md border-t border-gray-200 shadow-xl flex items-center justify-between">
           <div className="max-w-7xl mx-auto w-full flex flex-col md:flex-row items-center justify-between gap-4">
             
