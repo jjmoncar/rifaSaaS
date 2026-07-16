@@ -265,11 +265,11 @@ export default function OrganizerDashboard({
                           </span>
                         </td>
                         <td className="px-6 py-4.5 font-semibold text-sm text-gray-700">
-                          {raffle.currency === 'USD' ? '$' : raffle.currency === 'BRL' ? 'R$' : 'π'}
+                          {raffle.currency === 'USD' ? '$' : raffle.currency === 'BRL' ? 'R$' : raffle.currency === 'VES' ? 'Bs.' : raffle.currency === 'SOL' ? 'S/' : 'π'}
                           {raffle.ticketPrice.toLocaleString('en-US', { minimumFractionDigits: raffle.currency === 'Pi' ? 0 : 2, maximumFractionDigits: 2 })}
                         </td>
                         <td className="px-6 py-4.5 font-bold text-sm text-gray-800">
-                          {raffle.currency === 'USD' ? '$' : raffle.currency === 'BRL' ? 'R$' : 'π'}
+                          {raffle.currency === 'USD' ? '$' : raffle.currency === 'BRL' ? 'R$' : raffle.currency === 'VES' ? 'Bs.' : raffle.currency === 'SOL' ? 'S/' : 'π'}
                           {raffleRev.toLocaleString('en-US', { minimumFractionDigits: raffle.currency === 'Pi' ? 0 : 2, maximumFractionDigits: 2 })}
                         </td>
                         <td className="px-6 py-4.5">

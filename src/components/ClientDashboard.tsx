@@ -256,7 +256,7 @@ export default function ClientDashboard({
                         {p.raffle}
                       </td>
                       <td className="px-5 py-4.5 text-xs font-mono font-bold text-gray-800 whitespace-nowrap">
-                        {p.currency === 'USD' ? '$' : p.currency === 'BRL' ? 'R$' : 'π'}
+                        {p.currency === 'USD' ? '$' : p.currency === 'BRL' ? 'R$' : p.currency === 'VES' ? 'Bs.' : p.currency === 'SOL' ? 'S/' : 'π'}
                         {p.amount.toLocaleString('en-US', { minimumFractionDigits: p.currency === 'Pi' ? 0 : 2, maximumFractionDigits: 2 })}
                       </td>
                       <td className="px-5 py-4.5">

@@ -289,7 +289,7 @@ export default function CreateRaffleModal({
                 <label className="text-xs font-semibold text-gray-600 uppercase tracking-widest">{t.pricePerTicket}</label>
                 <div className="relative">
                   <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-gray-500 font-medium">
-                    {currency === 'USD' ? '$' : currency === 'BRL' ? 'R$' : 'π'}
+                    {currency === 'USD' ? '$' : currency === 'BRL' ? 'R$' : currency === 'VES' ? 'Bs.' : currency === 'SOL' ? 'S/' : 'π'}
                   </span>
                   <input
                     id="form-raffle-price"
@@ -314,6 +314,10 @@ export default function CreateRaffleModal({
                     setCurrency(curr);
                     if (curr === 'BRL') {
                       setTicketPrice(50.0);
+                    } else if (curr === 'VES') {
+                      setTicketPrice(350.0);
+                    } else if (curr === 'SOL') {
+                      setTicketPrice(40.0);
                     } else {
                       setTicketPrice(10.0);
                     }
@@ -322,6 +326,8 @@ export default function CreateRaffleModal({
                 >
                   <option value="USD">USD - US Dollar ($)</option>
                   <option value="BRL">BRL - Brazilian Real (R$)</option>
+                  <option value="VES">VES - Bolívar Venezolano (Bs.)</option>
+                  <option value="SOL">SOL - Sol Peruano (S/)</option>
                 </select>
               </div>
 

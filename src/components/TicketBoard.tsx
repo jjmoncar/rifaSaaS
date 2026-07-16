@@ -115,7 +115,7 @@ export default function TicketBoard({
     return true;
   });
 
-  const currencySymbol = raffle.currency === 'USD' ? '$' : raffle.currency === 'BRL' ? 'R$' : 'π';
+  const currencySymbol = raffle.currency === 'USD' ? '$' : raffle.currency === 'BRL' ? 'R$' : raffle.currency === 'VES' ? 'Bs.' : raffle.currency === 'SOL' ? 'S/' : 'π';
   const displayPrice = (selectedTickets.length * raffle.ticketPrice).toLocaleString('en-US', {
     minimumFractionDigits: raffle.currency === 'Pi' ? 0 : 2,
     maximumFractionDigits: 2

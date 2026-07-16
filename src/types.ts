@@ -19,7 +19,7 @@ export interface Raffle {
   coverImage: string;
   totalTickets: number;
   ticketPrice: number;
-  currency: string; // 'USD' | 'Pi' | 'BRL'
+  currency: string; // 'USD' | 'Pi' | 'BRL' | 'VES' | 'SOL'
   soldTickets: number[]; // ticket numbers
   reservedTickets: number[]; // ticket numbers in cart/checkout
   purchases: TicketPurchase[];

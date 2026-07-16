@@ -29,7 +29,7 @@ export default function PrizePaymentModal({
     .filter(p => p.status === 'Successful')
     .reduce((sum, p) => sum + p.amount, 0);
 
-  const currencySymbol = raffle.currency === 'USD' ? '$' : raffle.currency === 'BRL' ? 'R$' : 'π';
+  const currencySymbol = raffle.currency === 'USD' ? '$' : raffle.currency === 'BRL' ? 'R$' : raffle.currency === 'VES' ? 'Bs.' : raffle.currency === 'SOL' ? 'S/' : 'π';
   const formattedRevenue = totalRevenue.toLocaleString('en-US', {
     minimumFractionDigits: raffle.currency === 'Pi' ? 0 : 2,
     maximumFractionDigits: 2

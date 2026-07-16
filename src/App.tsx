@@ -717,7 +717,7 @@ export default function App() {
                           {raffles.map((raffle) => {
                             const percent = Math.min(100, Math.round((raffle.soldTickets.length / raffle.totalTickets) * 100));
                             const isDrawn = raffle.status === 'drawn';
-                            const currSymbol = raffle.currency === 'USD' ? '$' : raffle.currency === 'BRL' ? 'R$' : 'π';
+                            const currSymbol = raffle.currency === 'USD' ? '$' : raffle.currency === 'BRL' ? 'R$' : raffle.currency === 'VES' ? 'Bs.' : raffle.currency === 'SOL' ? 'S/' : 'π';
 
                             return (
                               <div 
