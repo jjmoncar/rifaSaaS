@@ -30,6 +30,8 @@ export default function OrganizerDashboard({
 }: OrganizerDashboardProps) {
   const t = translations[currentLanguage];
 
+  const [hideDrawn, setHideDrawn] = React.useState(false);
+
   // Calculate high-fidelity dashboard metrics based on actual state
   const activeRafflesCount = raffles.filter(r => r.status === 'active' || r.status === 'drawing').length;
   
@@ -193,6 +195,15 @@ export default function OrganizerDashboard({
           <div className="bg-white rounded-2xl border border-gray-150 shadow-xs overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-150 flex justify-between items-center bg-gray-50/50">
               <h3 className="font-bold text-gray-900 text-sm uppercase tracking-wide">{t.yourRaffles}</h3>
+              <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-gray-600 hover:text-gray-900 transition-colors">
+                <input 
+                  type="checkbox" 
+                  checked={hideDrawn} 
+                  onChange={(e) => setHideDrawn(e.target.checked)} 
+                  className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-600 cursor-pointer"
+                />
+                {currentLanguage === 'es' ? 'Ocultar sorteadas' : currentLanguage === 'pt' ? 'Ocultar sorteadas' : 'Hide drawn'}
+              </label>
             </div>
             
             <div className="overflow-x-auto">
@@ -207,7 +218,9 @@ export default function OrganizerDashboard({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {raffles.map((raffle) => {
+                  {raffles
+                    .filter(raffle => hideDrawn ? raffle.status !== 'drawn' : true)
+                    .map((raffle) => {
                     const raffleRev = raffle.purchases
                       .filter(p => p.status === 'Successful')
                       .reduce((sum, p) => sum + p.amount, 0);
