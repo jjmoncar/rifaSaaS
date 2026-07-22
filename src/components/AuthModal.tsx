@@ -418,6 +418,7 @@ export default function AuthModal({
                   id="auth-input-fullname"
                   type="text"
                   required
+                  maxLength={100}
                   placeholder={currentT.fullNamePlace}
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
@@ -440,6 +441,7 @@ export default function AuthModal({
                 id="auth-input-email"
                 type="email"
                 required
+                maxLength={150}
                 placeholder={currentT.emailPlace}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -463,6 +465,7 @@ export default function AuthModal({
                 id="auth-input-password"
                 type={showPassword ? 'text' : 'password'}
                 required
+                maxLength={128}
                 placeholder={currentT.passwordPlace}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}

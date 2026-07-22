@@ -1,13 +1,104 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /users/{userId} {
-      allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == userId;
+
+    // =========================================================================
+    // FUNCIONES AUXILIARES DE SEGURIDAD Y VALIDACIÓN (SERVER-SIDE VALIDATION)
+    // =========================================================================
+
+    // Verifica si la petición proviene de un usuario autenticado
+    function isAuthenticated() {
+      return request.auth != null;
     }
+
+    // Verifica si el usuario actual es dueño del recurso/documento objetivo
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Verificación de Admin por Custom Claims
+    function isAuthAdmin() {
+      return isAuthenticated() && request.auth.token.get('admin', false) == true;
+    }
+
+    // Verificación de Admin desde el documento del usuario en Firestore
+    function isDocAdmin() {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Evalúa si el usuario es administrador
+    function isAdmin() {
+      return isAuthAdmin() || isDocAdmin();
+    }
+
+    // Validaciones de tipo y longitud de strings
+    function isValidString(val, minLen, maxLen) {
+      return val is string && val.size() >= minLen && val.size() <= maxLen;
+    }
+
+    // Validaciones de esquema para usuario
+    function isValidUserSchema(data) {
+      return (!('name' in data) || isValidString(data.name, 1, 100))
+          && (!('email' in data) || isValidString(data.email, 3, 150));
+    }
+
+    // Validaciones de esquema para rifa
+    function isValidRaffleSchema(data) {
+      return (!('name' in data) || isValidString(data.name, 1, 100))
+          && (!('description' in data) || isValidString(data.description, 1, 2000))
+          && (!('totalTickets' in data) || (data.totalTickets is number && data.totalTickets >= 1 && data.totalTickets <= 100000))
+          && (!('ticketPrice' in data) || (data.ticketPrice is number && data.ticketPrice >= 0.01 && data.ticketPrice <= 1000000));
+    }
+
+    // =========================================================================
+    // REGLA POR DEFECTO: DENEGAR TODO
+    // =========================================================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // =========================================================================
+    // COLECCIÓN: /users/{userId}
+    // =========================================================================
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+
+      allow create: if isOwner(userId) 
+        && isValidUserSchema(request.resource.data)
+        && (!request.resource.data.keys().hasAny(['role']) || request.resource.data.role != 'admin' || isAdmin());
+
+      allow update: if isOwner(userId) 
+        && isValidUserSchema(request.resource.data)
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']) || isAdmin())
+        || isAdmin();
+
+      allow delete: if isOwner(userId) || isAdmin();
+
+      match /{subcollection=**} {
+        allow read, write: if isOwner(userId) || isAdmin();
+      }
+    }
+
+    // =========================================================================
+    // COLECCIÓN: /raffles/{raffleId}
+    // =========================================================================
     match /raffles/{raffleId} {
       allow read: if true;
-      allow write: if request.auth != null;
+
+      allow create: if isAuthenticated() 
+        && isValidRaffleSchema(request.resource.data)
+        && (!request.resource.data.keys().hasAny(['organizerId']) || 
+            request.resource.data.organizerId == request.auth.uid ||
+            isAdmin());
+
+      allow update: if (isAdmin() 
+        || (isAuthenticated() && resource.data.get('organizerId', '') == request.auth.uid)
+        || (isAuthenticated() && 
+            !request.resource.data.diff(resource.data).affectedKeys().hasAny(['name', 'ticketPrice', 'totalTickets', 'organizerId'])))
+        && isValidRaffleSchema(request.resource.data);
+
+      allow delete: if isAdmin() || (isAuthenticated() && resource.data.get('organizerId', '') == request.auth.uid);
     }
   }
 }

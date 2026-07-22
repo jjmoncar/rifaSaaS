@@ -45,12 +45,27 @@ export default function PaymentModal({
 
   if (!isOpen) return null;
 
+  const [validationError, setValidationError] = useState<string | null>(null);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!buyerName || !buyerEmail || !cardKey) {
+    setValidationError(null);
+    const trimmedName = buyerName.trim();
+    const trimmedEmail = buyerEmail.trim();
+    const trimmedKey = cardKey.trim();
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!trimmedName || !trimmedEmail || !trimmedKey) {
       setShowError(true);
       return;
     }
+
+    if (!emailRegex.test(trimmedEmail)) {
+      setValidationError(currentLanguage === 'es' ? 'El formato del correo es inválido.' : 'Invalid email format.');
+      return;
+    }
+
     setShowError(false);
     setStatus('processing');
 
@@ -145,6 +160,13 @@ export default function PaymentModal({
                   {t.simulateReceipt}
                 </p>
 
+                {validationError && (
+                  <div className="p-3 bg-red-50 border border-red-100 rounded-lg text-red-800 text-[11px] flex gap-2">
+                    <AlertCircle className="shrink-0 text-red-600 mt-0.5" size={14} />
+                    <span>{validationError}</span>
+                  </div>
+                )}
+
                 {showError && (
                   <div className="p-3 bg-red-50 border border-red-100 rounded-lg text-red-800 text-[11px] flex gap-2">
                     <AlertCircle className="shrink-0 text-red-600 mt-0.5" size={14} />
@@ -161,6 +183,7 @@ export default function PaymentModal({
                       id="buyer-input-name"
                       type="text"
                       required
+                      maxLength={100}
                       value={buyerName}
                       onChange={(e) => setBuyerName(e.target.value)}
                       className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-hidden focus:border-emerald-600 focus:bg-white transition-all"
@@ -174,6 +197,7 @@ export default function PaymentModal({
                       id="buyer-input-email"
                       type="email"
                       required
+                      maxLength={150}
                       value={buyerEmail}
                       onChange={(e) => setBuyerEmail(e.target.value)}
                       className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-hidden focus:border-emerald-600 focus:bg-white transition-all font-sans"
@@ -201,6 +225,7 @@ export default function PaymentModal({
                       id="buyer-input-cardkey"
                       type="text"
                       required
+                      maxLength={100}
                       value={cardKey}
                       onChange={(e) => setCardKey(e.target.value)}
                       placeholder={raffle.currency === 'Pi' ? 'G2B...G39' : raffle.currency === 'BRL' ? 'alex@ex.com.br' : '4111 2222 3333 4444'}

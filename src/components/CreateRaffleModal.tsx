@@ -81,9 +81,24 @@ export default function CreateRaffleModal({
 
   if (!isOpen) return null;
 
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setUploadError(null);
     const file = e.target.files?.[0];
     if (file) {
+      // Allowed image MIME types
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml', 'image/avif'];
+      if (!allowedTypes.includes(file.type)) {
+        setUploadError(currentLanguage === 'es' ? 'Formato de imagen no soportado (se requiere JPG, PNG, WEBP o SVG).' : 'Unsupported image format.');
+        return;
+      }
+      // Maximum 5MB size limit
+      if (file.size > 5 * 1024 * 1024) {
+        setUploadError(currentLanguage === 'es' ? 'La imagen no debe superar los 5MB.' : 'Image size must not exceed 5MB.');
+        return;
+      }
+
       const reader = new FileReader();
       reader.onloadend = () => {
         setCoverImage(reader.result as string);
@@ -94,22 +109,32 @@ export default function CreateRaffleModal({
 
   const handlePublish = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !description) {
+    const trimmedName = name.trim();
+    const trimmedDesc = description.trim();
+
+    if (!trimmedName || !trimmedDesc) {
       setShowValidationWarning(true);
       return;
     }
+
+    if (new Date(drawDate) <= new Date(startDate)) {
+      setUploadError(currentLanguage === 'es' ? 'La fecha de sorteo debe ser posterior a la fecha de inicio.' : 'Draw date must be after start date.');
+      return;
+    }
+
     setShowValidationWarning(false);
+    setUploadError(null);
     setIsPublishing(true);
 
     setTimeout(() => {
       onSubmit({
-        name,
-        description,
+        name: trimmedName.slice(0, 100),
+        description: trimmedDesc.slice(0, 2000),
         coverImage,
-        totalTickets: Number(totalTickets),
-        ticketPrice: Number(ticketPrice),
+        totalTickets: Math.max(1, Math.min(100000, Number(totalTickets))),
+        ticketPrice: Math.max(0.01, Math.min(1000000, Number(ticketPrice))),
         currency,
-        subdomain: name.toLowerCase().replace(/[^a-z0-9-]/g, '') || 'raffle',
+        subdomain: trimmedName.toLowerCase().replace(/[^a-z0-9-]/g, '') || 'raffle',
         startDate,
         drawDate,
         drawMethod
@@ -178,12 +203,19 @@ export default function CreateRaffleModal({
             </h3>
             
             <div className="space-y-3">
+              {uploadError && (
+                <div className="p-3 bg-red-50 border border-red-100 rounded-lg text-red-700 text-xs flex items-center gap-2">
+                  <AlertCircle size={16} className="shrink-0 text-red-600" />
+                  <span>{uploadError}</span>
+                </div>
+              )}
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-semibold text-gray-600 uppercase tracking-widest">{t.raffleName}</label>
                 <input
                   id="form-raffle-name"
                   type="text"
                   required
+                  maxLength={100}
                   value={name}
                   onChange={(e) => {
                     setName(e.target.value);
@@ -198,6 +230,7 @@ export default function CreateRaffleModal({
                 <textarea
                   id="form-raffle-desc"
                   required
+                  maxLength={2000}
                   rows={3}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
