@@ -9,7 +9,7 @@ import PricingPlans from './components/PricingPlans';
 import PrizePaymentModal from './components/PrizePaymentModal';
 import { Raffle, TicketPurchase, AppNotification, UserProfile, Language } from './types';
 import { translations } from './translations';
-import { Gift, Award, Calendar, Bell, Volume2, HelpCircle, Flame, CheckCircle2, RefreshCw } from 'lucide-react';
+import { Gift, Award, Calendar, Bell, Volume2, HelpCircle, Flame, CheckCircle2, RefreshCw, ShieldCheck, Zap, ArrowRight, Star, Users, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 // Firebase core integrations
@@ -691,24 +691,153 @@ export default function App() {
                     // Display all active campaigns Grid
                     <div className="space-y-6">
                       
-                      {/* Active Hero Announcement */}
-                      <section className="relative rounded-3xl overflow-hidden bg-slate-900 text-white min-h-[220px] p-6.5 sm:p-8 flex items-center justify-between shadow-xl border border-slate-800">
-                        <div className="relative z-10 max-w-lg space-y-3.5">
-                          <span className="bg-emerald-500 text-slate-950 text-[10px] sm:text-[11px] font-black px-3.5 py-1.5 rounded-full uppercase tracking-widest leading-none">
-                            Provably Fair Raffle Hub
-                          </span>
-                          <h1 className="text-2xl sm:text-4xl font-black tracking-tight leading-none">
-                            {selectedLanguage === 'es' ? 'Sorteos de Alta Gama' : selectedLanguage === 'pt' ? 'Sorteios de Alta Gama' : 'High-End Verified Giveaways'}
-                          </h1>
-                          <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-normal">
-                            {selectedLanguage === 'es' ? 'Participa de forma segura mediante métodos cifrados instantáneos Pix o Tarjeta de Crédito. Transparencia certificada.' : 'Enter raffle campaigns backed by provably safe automated distribution. Every ticket certified on public ledgers.'}
+                      {/* Enhanced Landing Page Hero Section */}
+                      <section className="relative rounded-[2.5rem] overflow-hidden bg-slate-950 text-white min-h-[500px] p-8 sm:p-12 lg:p-16 flex flex-col justify-center items-center text-center shadow-2xl border border-slate-800">
+                        <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/40 via-slate-950 to-purple-900/40 opacity-80" />
+                        
+                        {/* Decorative animated elements */}
+                        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-emerald-500/20 rounded-full blur-[100px] mix-blend-screen animate-pulse" />
+                        <div className="absolute bottom-1/4 right-1/4 w-72 h-72 bg-purple-500/20 rounded-full blur-[120px] mix-blend-screen animate-pulse delay-1000" />
+                        
+                        <div className="relative z-10 max-w-3xl space-y-8 flex flex-col items-center">
+                          <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.5 }}
+                          >
+                            <span className="inline-flex items-center gap-1.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-black px-4 py-2 rounded-full uppercase tracking-widest">
+                              <Star size={14} className="fill-emerald-400" /> 
+                              {selectedLanguage === 'es' ? 'Plataforma #1 de Sorteos' : 'Provably Fair Raffle Hub'}
+                            </span>
+                          </motion.div>
+                          
+                          <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.5, delay: 0.1 }}
+                            className="space-y-4"
+                          >
+                            <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black tracking-tight leading-[1.1] text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-200 to-slate-400">
+                              {selectedLanguage === 'es' ? 'Gana Premios Increíbles con Total Seguridad' : 'Win Incredible Prizes with Total Security'}
+                            </h1>
+                            <p className="text-base sm:text-lg text-slate-300 leading-relaxed max-w-2xl mx-auto font-medium">
+                              {selectedLanguage === 'es' ? 'Participa en sorteos exclusivos y verificados. Tecnología transparente de punta para garantizar que cada ticket tiene las mismas oportunidades de ganar.' : 'Enter exclusive, verified raffle campaigns backed by provably safe automated distribution. Every ticket certified.'}
+                            </p>
+                          </motion.div>
+                          
+                          <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.5, delay: 0.2 }}
+                            className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto"
+                          >
+                            <button
+                              onClick={() => {
+                                document.getElementById('campaigns-section')?.scrollIntoView({ behavior: 'smooth' });
+                              }}
+                              className="w-full sm:w-auto px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-sm rounded-2xl uppercase tracking-widest transition-all hover:scale-105 hover:shadow-[0_0_40px_rgba(16,185,129,0.4)] flex items-center justify-center gap-2 cursor-pointer"
+                            >
+                              {selectedLanguage === 'es' ? 'Explorar Sorteos' : 'Explore Raffles'}
+                              <ArrowRight size={18} />
+                            </button>
+                            
+                            {!isLoggedIn && (
+                              <button
+                                onClick={() => setIsAuthModalOpen(true)}
+                                className="w-full sm:w-auto px-8 py-4 bg-white/5 hover:bg-white/10 text-white border border-white/10 font-bold text-sm rounded-2xl transition-all flex items-center justify-center gap-2 cursor-pointer"
+                              >
+                                {selectedLanguage === 'es' ? 'Crear una Cuenta' : 'Create an Account'}
+                              </button>
+                            )}
+                          </motion.div>
+
+                          {/* Trust metrics */}
+                          <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 1, delay: 0.5 }}
+                            className="pt-8 mt-8 border-t border-white/10 flex flex-wrap justify-center gap-8 sm:gap-16 text-slate-400 w-full"
+                          >
+                            <div className="flex flex-col items-center gap-1">
+                              <span className="text-2xl font-black text-white">100%</span>
+                              <span className="text-[10px] uppercase tracking-widest font-bold">Transparente</span>
+                            </div>
+                            <div className="flex flex-col items-center gap-1">
+                              <span className="text-2xl font-black text-white">+50k</span>
+                              <span className="text-[10px] uppercase tracking-widest font-bold">Usuarios</span>
+                            </div>
+                            <div className="flex flex-col items-center gap-1">
+                              <span className="text-2xl font-black text-white">24/7</span>
+                              <span className="text-[10px] uppercase tracking-widest font-bold">Soporte</span>
+                            </div>
+                          </motion.div>
+                        </div>
+                      </section>
+
+                      {/* Features Section */}
+                      <section className="py-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="bg-white rounded-3xl p-8 border border-gray-150 shadow-sm hover:shadow-xl transition-all duration-300 group">
+                          <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-emerald-600 group-hover:text-white transition-all">
+                            <ShieldCheck size={28} />
+                          </div>
+                          <h3 className="text-lg font-black text-gray-900 mb-3">{selectedLanguage === 'es' ? 'Sorteos Verificados' : 'Verified Draws'}</h3>
+                          <p className="text-sm text-gray-500 leading-relaxed">
+                            {selectedLanguage === 'es' ? 'Todos nuestros sorteos utilizan un sistema algorítmico comprobable que asegura un ganador 100% aleatorio y justo.' : 'All our draws use a provably fair algorithmic system that ensures a 100% random and fair winner.'}
                           </p>
                         </div>
-                        <div className="absolute right-0 bottom-0 top-0 w-2/5 opacity-15 sm:opacity-30 pointer-events-none bg-[radial-gradient(ellipse_at_bottom_right,_var(--tw-gradient-stops))] from-emerald-500/80 via-transparent to-transparent" />
+                        
+                        <div className="bg-white rounded-3xl p-8 border border-gray-150 shadow-sm hover:shadow-xl transition-all duration-300 group">
+                          <div className="w-14 h-14 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-purple-600 group-hover:text-white transition-all">
+                            <Zap size={28} />
+                          </div>
+                          <h3 className="text-lg font-black text-gray-900 mb-3">{selectedLanguage === 'es' ? 'Pagos Instantáneos' : 'Instant Payments'}</h3>
+                          <p className="text-sm text-gray-500 leading-relaxed">
+                            {selectedLanguage === 'es' ? 'Compra tus boletos en segundos con métodos de pago seguros como Tarjeta de Crédito o transferencias instantáneas.' : 'Buy your tickets in seconds with secure payment methods like Credit Card or instant transfers.'}
+                          </p>
+                        </div>
+
+                        <div className="bg-white rounded-3xl p-8 border border-gray-150 shadow-sm hover:shadow-xl transition-all duration-300 group">
+                          <div className="w-14 h-14 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-amber-600 group-hover:text-white transition-all">
+                            <Users size={28} />
+                          </div>
+                          <h3 className="text-lg font-black text-gray-900 mb-3">{selectedLanguage === 'es' ? 'Comunidad Activa' : 'Active Community'}</h3>
+                          <p className="text-sm text-gray-500 leading-relaxed">
+                            {selectedLanguage === 'es' ? 'Únete a miles de participantes que ya están ganando. Interactúa, revisa el historial y participa con confianza.' : 'Join thousands of participants who are already winning. Interact, check history and participate with confidence.'}
+                          </p>
+                        </div>
+                      </section>
+
+                      {/* How it Works Section */}
+                      <section className="bg-emerald-900 rounded-[2.5rem] p-10 sm:p-14 text-white relative overflow-hidden mb-8 shadow-xl">
+                        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white via-transparent to-transparent" />
+                        <div className="relative z-10 text-center mb-12">
+                          <h2 className="text-3xl font-black mb-4">{selectedLanguage === 'es' ? '¿Cómo Funciona?' : 'How it Works'}</h2>
+                          <p className="text-emerald-100/80 max-w-xl mx-auto text-sm">
+                            {selectedLanguage === 'es' ? 'Participar es muy fácil. Sigue estos 3 sencillos pasos y estarás listo para ganar.' : 'Participating is very easy. Follow these 3 simple steps and you will be ready to win.'}
+                          </p>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10">
+                          <div className="flex flex-col items-center text-center space-y-4">
+                            <div className="w-16 h-16 rounded-full bg-emerald-800 border-4 border-emerald-700 flex items-center justify-center text-2xl font-black shadow-xl">1</div>
+                            <h4 className="font-bold text-lg">{selectedLanguage === 'es' ? 'Elige una Campaña' : 'Choose a Campaign'}</h4>
+                            <p className="text-emerald-100/70 text-sm">{selectedLanguage === 'es' ? 'Explora nuestra lista de sorteos activos y encuentra el premio que deseas.' : 'Explore our list of active raffles and find the prize you want.'}</p>
+                          </div>
+                          <div className="flex flex-col items-center text-center space-y-4">
+                            <div className="w-16 h-16 rounded-full bg-emerald-800 border-4 border-emerald-700 flex items-center justify-center text-2xl font-black shadow-xl">2</div>
+                            <h4 className="font-bold text-lg">{selectedLanguage === 'es' ? 'Selecciona tus Números' : 'Select your Numbers'}</h4>
+                            <p className="text-emerald-100/70 text-sm">{selectedLanguage === 'es' ? 'Usa nuestro panel interactivo para elegir tus números de la suerte.' : 'Use our interactive panel to choose your lucky numbers.'}</p>
+                          </div>
+                          <div className="flex flex-col items-center text-center space-y-4">
+                            <div className="w-16 h-16 rounded-full bg-emerald-800 border-4 border-emerald-700 flex items-center justify-center text-2xl font-black shadow-xl">3</div>
+                            <h4 className="font-bold text-lg">{selectedLanguage === 'es' ? 'Compra y Gana' : 'Buy and Win'}</h4>
+                            <p className="text-emerald-100/70 text-sm">{selectedLanguage === 'es' ? 'Realiza tu pago seguro y espera el anuncio del sorteo automatizado.' : 'Make your secure payment and wait for the automated draw announcement.'}</p>
+                          </div>
+                        </div>
                       </section>
 
                       {/* Active Grid row */}
-                      <div className="space-y-4">
+                      <div id="campaigns-section" className="space-y-4 scroll-mt-24">
                         <h2 className="text-sm font-extrabold text-gray-500 uppercase tracking-widest">
                           {selectedLanguage === 'es' ? 'Campañas Disponibles' : 'Available Campaigns'}
                         </h2>
