@@ -17,6 +17,8 @@ import { auth, db } from './firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { doc, getDoc, setDoc, collection, addDoc, updateDoc, onSnapshot } from 'firebase/firestore';
 import AuthModal from './components/AuthModal';
+import PrivacyPolicy from './components/PrivacyPolicy';
+import TermsOfUse from './components/TermsOfUse';
 
 const INITIAL_RAFFLES: Raffle[] = [];
 
@@ -43,6 +45,8 @@ export default function App() {
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isPrivacyOpen, setIsPrivacyOpen] = useState(false);
+  const [isTermsOpen, setIsTermsOpen] = useState(false);
 
   // Firebase Auth State listener
   useEffect(() => {
@@ -1208,11 +1212,20 @@ export default function App() {
 
       {/* Simple decorative footer */}
       <footer className="py-8 border-t border-gray-200 mt-12 bg-white text-center">
-        <div className="max-w-7xl mx-auto px-4 text-xs text-gray-400 space-y-1.5 leading-normal">
+        <div className="max-w-7xl mx-auto px-4 text-xs text-gray-400 space-y-3 leading-normal flex flex-col items-center">
+          <div className="flex gap-4 justify-center text-emerald-700 font-semibold mb-2">
+            <button onClick={() => setIsPrivacyOpen(true)} className="hover:underline cursor-pointer">Políticas de Privacidad</button>
+            <span>|</span>
+            <button onClick={() => setIsTermsOpen(true)} className="hover:underline cursor-pointer">Términos de Uso</button>
+          </div>
           <p>© 2026 RifaSaaS Inc. Decarbonized mobile raffle ledger. All rights reserved.</p>
           <p className="font-mono">Provably Fair Core • API Version v2.4.0 • Port 3000 Ingress Routing</p>
         </div>
       </footer>
+
+      {/* LEGAL MODALS */}
+      <PrivacyPolicy isOpen={isPrivacyOpen} onClose={() => setIsPrivacyOpen(false)} />
+      <TermsOfUse isOpen={isTermsOpen} onClose={() => setIsTermsOpen(false)} />
 
     </div>
   );
