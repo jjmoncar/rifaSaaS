@@ -10,7 +10,7 @@ interface PricingPlansProps {
 
 export default function PricingPlans({ currentLanguage }: PricingPlansProps) {
   const t = translations[currentLanguage];
-  const [selectedPlan, setSelectedPlan] = useState<'starter' | 'pro'>('pro');
+  const [selectedPlan, setSelectedPlan] = useState<'starter' | 'medium' | 'pro'>('pro');
 
   return (
     <div className="space-y-12 py-4">
@@ -27,7 +27,7 @@ export default function PricingPlans({ currentLanguage }: PricingPlansProps) {
       </div>
 
       {/* Pricing Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto items-stretch">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto items-stretch">
         
         {/* Starter Plan */}
         <div 
@@ -70,6 +70,67 @@ export default function PricingPlans({ currentLanguage }: PricingPlansProps) {
             }`}
           >
             {t.getStarted}
+          </button>
+        </div>
+
+        {/* Medium Plan */}
+        <div 
+          onClick={() => setSelectedPlan('medium')}
+          className={`bg-white rounded-2xl border p-6.5 flex flex-col justify-between transition-all cursor-pointer relative ${
+            selectedPlan === 'medium'
+              ? 'border-emerald-600 ring-4 ring-emerald-600/10 scale-102 shadow-2xl z-10'
+              : 'border-gray-205 hover:border-emerald-600/50 shadow-xs'
+          }`}
+        >
+          <div className="space-y-5 pt-2">
+            <div>
+              <h3 className="text-lg font-extrabold text-gray-901 flex items-center gap-2">
+                <span>Medium</span>
+              </h3>
+              <p className="text-xs text-gray-400 mt-1">
+                {currentLanguage === 'es' ? 'Ideal para comunidades en crecimiento y sorteos regulares.' : currentLanguage === 'pt' ? 'Ideal para comunidades em crescimento e sorteios regulares.' : 'Ideal for growing communities and regular draws.'}
+              </p>
+            </div>
+            
+            <div className="flex items-baseline">
+              <span className="text-4xl font-black text-gray-909">$14.99</span>
+              <span className="text-xs text-gray-400 font-bold ml-1.5">{t.proPriceUnit}</span>
+            </div>
+
+            {/* Feature list */}
+            <ul className="space-y-3 pt-3 border-t border-gray-100">
+              <li className="flex items-start gap-3.5 text-xs text-gray-600 font-medium leading-relaxed">
+                <Check className="text-emerald-700 shrink-0 mt-0.5" size={15} strokeWidth={3} />
+                <span>
+                  {currentLanguage === 'es' ? '20 Rifas Activas' : currentLanguage === 'pt' ? '20 Rifas Ativas' : '20 Active raffles'}
+                </span>
+              </li>
+              <li className="flex items-start gap-3.5 text-xs text-gray-600 font-medium leading-relaxed">
+                <Check className="text-emerald-700 shrink-0 mt-0.5" size={15} strokeWidth={3} />
+                <span>
+                  {currentLanguage === 'es' ? '3500 Boletos Máx' : currentLanguage === 'pt' ? '3500 Bilhetes Máx' : '3500 Max tickets'}
+                </span>
+              </li>
+              <li className="flex items-start gap-3.5 text-xs text-gray-600 font-medium leading-relaxed">
+                <Check className="text-emerald-700 shrink-0 mt-0.5" size={15} strokeWidth={3} />
+                <span>{t.verifiedAutoDraw}</span>
+              </li>
+              <li className="flex items-start gap-3.5 text-xs text-gray-600 font-medium leading-relaxed">
+                <Check className="text-emerald-700 shrink-0 mt-0.5" size={15} strokeWidth={3} />
+                <span>{t.manualDraw}</span>
+              </li>
+            </ul>
+          </div>
+
+          <button
+            id="plan-btn-medium"
+            className={`w-full mt-8 py-3.5 font-semibold text-xs rounded-xl uppercase tracking-wider transition-all cursor-pointer ${
+              selectedPlan === 'medium'
+                ? 'bg-emerald-700 hover:bg-emerald-800 text-white shadow-md shadow-emerald-700/10'
+                : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
+            }`}
+          >
+            {currentLanguage === 'es' ? 'Adquirir Plan Medium' : currentLanguage === 'pt' ? 'Adquirir Plano Medium' : 'Get Medium Plan'}
           </button>
         </div>
 
