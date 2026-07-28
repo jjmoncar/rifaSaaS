@@ -64,14 +64,24 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isOwner(userId) || isAdmin();
 
+      // Al crearse la cuenta, solo se permiten valores seguros por defecto (tier Free, role client)
       allow create: if isOwner(userId) 
         && isValidUserSchema(request.resource.data)
-        && (!request.resource.data.keys().hasAny(['role']) || request.resource.data.role != 'admin' || isAdmin());
+        && (
+             isAdmin() || 
+             (
+               request.resource.data.get('role', 'client') == 'client' &&
+               request.resource.data.get('tier', 'Free') == 'Free'
+             )
+           );
 
+      // Bloquear actualización de campos sensibles para usuarios normales
       allow update: if isOwner(userId) 
         && isValidUserSchema(request.resource.data)
-        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']) || isAdmin())
-        || isAdmin();
+        && (
+             isAdmin() || 
+             !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'tier', 'rafflesJoinedCount', 'ticketsPurchasedCount'])
+           );
 
       allow delete: if isOwner(userId) || isAdmin();
 
@@ -92,10 +102,12 @@ service cloud.firestore {
             request.resource.data.organizerId == request.auth.uid ||
             isAdmin());
 
+      // Los usuarios normales solo pueden tocar los arreglos de ventas/reservas.
+      // Los organizadores o admins tienen control total.
       allow update: if (isAdmin() 
         || (isAuthenticated() && resource.data.get('organizerId', '') == request.auth.uid)
         || (isAuthenticated() && 
-            !request.resource.data.diff(resource.data).affectedKeys().hasAny(['name', 'ticketPrice', 'totalTickets', 'organizerId'])))
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['soldTickets', 'reservedTickets', 'purchases'])))
         && isValidRaffleSchema(request.resource.data);
 
       allow delete: if isAdmin() || (isAuthenticated() && resource.data.get('organizerId', '') == request.auth.uid);
