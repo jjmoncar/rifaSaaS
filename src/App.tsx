@@ -19,6 +19,7 @@ import { doc, getDoc, setDoc, collection, addDoc, updateDoc, onSnapshot } from '
 import AuthModal from './components/AuthModal';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsOfUse from './components/TermsOfUse';
+import { PayPalScriptProvider } from '@paypal/react-paypal-js';
 
 const INITIAL_RAFFLES: Raffle[] = [];
 
@@ -577,7 +578,8 @@ export default function App() {
   const unreadAlertsCount = notifications.filter(a => !a.read).length;
 
   return (
-    <div className="min-h-screen bg-gray-50/70 text-gray-900 font-sans flex flex-col pt-16">
+    <PayPalScriptProvider options={{ clientId: import.meta.env.VITE_PAYPAL_CLIENT_ID || 'test', currency: 'USD' }}>
+      <div className="min-h-screen bg-gray-50/70 text-gray-900 font-sans flex flex-col pt-16">
       
       {/* Platform Navigation Header */}
       <Header
@@ -1265,6 +1267,7 @@ export default function App() {
       <TermsOfUse isOpen={isTermsOpen} onClose={() => setIsTermsOpen(false)} />
 
     </div>
+    </PayPalScriptProvider>
   );
 }
 

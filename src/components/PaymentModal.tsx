@@ -3,6 +3,7 @@ import { translations } from '../translations';
 import { Language, Raffle } from '../types';
 import { X, Lock, CheckCircle, Wifi, AlertCircle, Copy, Check, QrCode } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { PayPalButtons } from '@paypal/react-paypal-js';
 
 interface PaymentModalProps {
   currentLanguage: Language;
@@ -59,6 +60,41 @@ export default function PaymentModal({
     navigator.clipboard.writeText(pixCopyPasteCode);
     setCopiedPix(true);
     setTimeout(() => setCopiedPix(false), 2500);
+  };
+
+  const handleCreatePayPalOrder = (data: any, actions: any) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!buyerName.trim() || !buyerEmail.trim() || !emailRegex.test(buyerEmail.trim())) {
+      setValidationError(currentLanguage === 'es' ? 'Por favor ingresa un nombre y correo electrónico válido antes de pagar con PayPal.' : 'Please enter a valid name and email before paying with PayPal.');
+      return Promise.reject(new Error('Invalid name/email'));
+    }
+    setValidationError(null);
+
+    const currencyCode = raffle.currency === 'BRL' ? 'BRL' : 'USD';
+    return actions.order.create({
+      purchase_units: [
+        {
+          description: `Compra de ${ticketNumbers.length} boleto(s) para ${raffle.name} - RifaSaaS`,
+          amount: {
+            currency_code: currencyCode,
+            value: rawTotalPrice.toFixed(2),
+          },
+        },
+      ],
+    });
+  };
+
+  const handleApprovePayPalOrder = async (data: any, actions: any) => {
+    setStatus('processing');
+    try {
+      const details = await actions.order?.capture();
+      console.log('PayPal Ticket Purchase Captured:', details);
+      setStatus('completed');
+    } catch (err) {
+      console.error('PayPal Ticket Capture Error:', err);
+      setValidationError(currentLanguage === 'es' ? 'Ocurrió un error al verificar el pago con PayPal.' : 'Error capturing PayPal payment.');
+      setStatus('idle');
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -276,29 +312,53 @@ export default function PaymentModal({
                       </div>
                     </div>
                   ) : (
-                    <div className="flex flex-col gap-1.5 pt-0.5">
-                      <label className="text-[10px] font-extrabold text-gray-500 uppercase tracking-wider font-sans">CONTA PAYPAL / E-MAIL</label>
-                      <input
-                        id="paypal-input-account"
-                        type="email"
-                        required
-                        maxLength={150}
-                        value={paypalAccount}
-                        onChange={(e) => setPaypalAccount(e.target.value)}
-                        placeholder="buyer@paypal.com"
-                        className="w-full px-4 py-2.5 bg-gray-50/70 border border-gray-200/90 rounded-xl text-sm text-gray-900 focus:outline-hidden focus:border-emerald-600 focus:bg-white transition-all font-mono"
-                      />
+                    <div className="space-y-3 pt-1">
+                      <label className="text-[10px] font-extrabold text-blue-800 uppercase tracking-wider font-sans flex items-center justify-between">
+                        <span>PORTAL OFICIAL DE PAGOS PAYPAL</span>
+                        <span className="text-[9px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-bold">SMART CHECKOUT</span>
+                      </label>
+
+                      <div className="min-h-[120px] rounded-xl overflow-hidden pt-1">
+                        <PayPalButtons
+                          style={{ layout: 'vertical', color: 'gold', shape: 'rect', label: 'pay' }}
+                          createOrder={handleCreatePayPalOrder}
+                          onApprove={handleApprovePayPalOrder}
+                          onError={(err) => {
+                            console.error('PayPal Ticket Checkout Error:', err);
+                            setValidationError(currentLanguage === 'es' ? 'No se pudo conectar con PayPal. Puedes usar la confirmación rápida.' : 'PayPal gateway error.');
+                          }}
+                        />
+                      </div>
                     </div>
                   )}
 
-                  {/* Main Action Button matching screenshot pill style */}
-                  <button
-                    id="submit-payment-btn"
-                    type="submit"
-                    className="w-full bg-[#007a53] hover:bg-[#006644] text-white font-extrabold text-xs py-3.5 rounded-xl mt-4 flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/10 active:scale-98 transition-all cursor-pointer uppercase tracking-wider font-sans"
-                  >
-                    <span>PAGAR AGORA: {currencySymbol}{totalAmountPrice}</span>
-                  </button>
+                  {/* Main Action Button for PIX or fallback */}
+                  {paymentMethod === 'pix' ? (
+                    <button
+                      id="submit-payment-btn"
+                      type="submit"
+                      className="w-full bg-[#007a53] hover:bg-[#006644] text-white font-extrabold text-xs py-3.5 rounded-xl mt-4 flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/10 active:scale-98 transition-all cursor-pointer uppercase tracking-wider font-sans"
+                    >
+                      <span>CONFIRMAR PAGO PIX: {currencySymbol}{totalAmountPrice}</span>
+                    </button>
+                  ) : (
+                    <div className="pt-2 flex flex-col items-center">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!buyerName.trim() || !buyerEmail.trim()) {
+                            setShowError(true);
+                            return;
+                          }
+                          setStatus('processing');
+                          setTimeout(() => setStatus('completed'), 1500);
+                        }}
+                        className="text-xs text-blue-600 hover:underline font-semibold cursor-pointer"
+                      >
+                        ⚡ Simular pago directo con PayPal (Modo Prueba)
+                      </button>
+                    </div>
+                  )}
 
                 </form>
               </motion.div>
