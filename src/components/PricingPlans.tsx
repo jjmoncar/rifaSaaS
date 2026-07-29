@@ -186,7 +186,7 @@ export default function PricingPlans({ currentLanguage, userTier = 'Free' }: Pri
             </div>
             
             <div className="flex items-baseline">
-              <span className="text-4xl font-black text-gray-909">{t.proPrice}</span>
+              <span className="text-4xl font-black text-gray-909">$29.00</span>
               <span className="text-xs text-gray-400 font-bold ml-1.5">{t.proPriceUnit}</span>
             </div>
 
@@ -213,9 +213,14 @@ export default function PricingPlans({ currentLanguage, userTier = 'Free' }: Pri
 
           <button
             id="plan-btn-pro"
-            className="w-full mt-8 py-3.5 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs rounded-xl uppercase tracking-wider transition-all shadow-md shadow-emerald-700/10 cursor-pointer"
+            onClick={() => handlePlanClick('Pro', '$29.00')}
+            className={`w-full mt-8 py-3.5 font-semibold text-xs rounded-xl uppercase tracking-wider transition-all cursor-pointer ${
+              userTier === 'Pro'
+                ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
+                : 'bg-emerald-700 hover:bg-emerald-800 text-white shadow-md shadow-emerald-700/10'
+            }`}
           >
-            {t.goProNow}
+            {userTier === 'Pro' ? (currentLanguage === 'es' ? 'Plan Actual' : 'Current Plan') : t.goProNow}
           </button>
         </div>
 
