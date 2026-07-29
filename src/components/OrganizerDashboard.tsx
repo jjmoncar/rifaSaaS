@@ -7,6 +7,7 @@ interface OrganizerDashboardProps {
   currentLanguage: Language;
   raffles: Raffle[];
   recentPurchases: TicketPurchase[];
+  userTier: string;
   onCreateRaffleClick: () => void;
   onSelectRaffle: (raffle: Raffle) => void;
   onTriggerDraw: (raffleId: string) => void;
@@ -20,6 +21,7 @@ export default function OrganizerDashboard({
   currentLanguage,
   raffles,
   recentPurchases,
+  userTier,
   onCreateRaffleClick,
   onSelectRaffle,
   onEditRaffle,
@@ -34,6 +36,12 @@ export default function OrganizerDashboard({
 
   // Calculate high-fidelity dashboard metrics based on actual state
   const activeRafflesCount = raffles.filter(r => r.status === 'active' || r.status === 'drawing').length;
+  
+  const maxActiveRaffles = userTier === 'Free' || userTier === 'Starter' ? 1 
+                         : userTier === 'Medium' ? 20 
+                         : userTier === 'Pro' ? 30 
+                         : 100;
+  const isLimitReached = activeRafflesCount >= maxActiveRaffles;
   
   const totalRevenueVal = raffles.reduce((acc, current) => {
     // Sum prices of all successful purchases
@@ -73,14 +81,20 @@ export default function OrganizerDashboard({
           </h1>
           <p className="text-sm text-gray-500 mt-1">{t.overviewSub}</p>
         </div>
-        <button
-          id="hero-create-raffle-btn"
-          onClick={onCreateRaffleClick}
-          className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-sm px-6 py-3.5 rounded-xl shadow-lg shadow-emerald-700/10 transition-all active:scale-97 cursor-pointer flex items-center justify-center gap-2"
-        >
-          <span className="text-lg font-bold">+</span>
-          {t.createNewRaffle}
-        </button>
+        <div className="flex flex-col items-end">
+          <button
+            id="hero-create-raffle-btn"
+            onClick={isLimitReached ? undefined : onCreateRaffleClick}
+            disabled={isLimitReached}
+            className={`${isLimitReached ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-emerald-700 hover:bg-emerald-800 text-white cursor-pointer active:scale-97 shadow-lg shadow-emerald-700/10'} font-semibold text-sm px-6 py-3.5 rounded-xl transition-all flex items-center justify-center gap-2`}
+          >
+            <span className="text-lg font-bold">+</span>
+            {t.createNewRaffle}
+          </button>
+          {isLimitReached && (
+            <span className="text-[10px] text-red-500 font-semibold mt-1">Límite de plan alcanzado ({activeRafflesCount}/{maxActiveRaffles})</span>
+          )}
+        </div>
       </div>
 
       {/* KPI Grid HUD */}

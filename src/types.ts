@@ -47,8 +47,9 @@ export interface UserProfile {
   name: string;
   email: string;
   avatar: string;
-  tier: 'Free' | 'Pro' | 'Enterprise';
+  tier: 'Free' | 'Starter' | 'Medium' | 'Pro' | 'Enterprise';
   rafflesJoinedCount: number;
   ticketsPurchasedCount: number;
   role?: 'organizer' | 'client';
+  trialEndsAt?: string;
 }

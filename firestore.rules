@@ -75,12 +75,15 @@ service cloud.firestore {
              )
            );
 
-      // Bloquear actualización de campos sensibles para usuarios normales
+      // Bloquear actualización de campos sensibles para usuarios normales (excepto tier para simulación de pagos)
       allow update: if isOwner(userId) 
         && isValidUserSchema(request.resource.data)
         && (
              isAdmin() || 
-             !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'tier', 'rafflesJoinedCount', 'ticketsPurchasedCount'])
+             (
+               !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'rafflesJoinedCount', 'ticketsPurchasedCount']) &&
+               (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['trialEndsAt']) || !('trialEndsAt' in resource.data))
+             )
            );
 
       allow delete: if isOwner(userId) || isAdmin();

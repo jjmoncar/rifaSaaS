@@ -10,6 +10,7 @@ interface CreateRaffleModalProps {
   onClose: () => void;
   onSubmit: (raffle: Omit<Raffle, 'id' | 'soldTickets' | 'reservedTickets' | 'purchases' | 'status'>) => void;
   editingRaffle?: Raffle | null;
+  userTier?: string;
 }
 
 const PRESET_IMAGES = [
@@ -32,9 +33,15 @@ export default function CreateRaffleModal({
   isOpen,
   onClose,
   onSubmit,
-  editingRaffle
+  editingRaffle,
+  userTier = 'Free'
 }: CreateRaffleModalProps) {
   const t = translations[currentLanguage];
+
+  const maxTicketsLimit = userTier === 'Free' || userTier === 'Starter' ? 100
+                        : userTier === 'Medium' ? 3500
+                        : userTier === 'Pro' ? 5000
+                        : 100000;
 
   // Form State
   const [name, setName] = useState('');
@@ -122,6 +129,12 @@ export default function CreateRaffleModal({
       return;
     }
 
+    const ticketCount = Number(totalTickets);
+    if (ticketCount > maxTicketsLimit) {
+      setUploadError(currentLanguage === 'es' ? `Tu plan actual permite un máximo de ${maxTicketsLimit} boletos.` : `Your current plan allows a maximum of ${maxTicketsLimit} tickets.`);
+      return;
+    }
+
     setShowValidationWarning(false);
     setUploadError(null);
     setIsPublishing(true);
@@ -131,7 +144,7 @@ export default function CreateRaffleModal({
         name: trimmedName.slice(0, 100),
         description: trimmedDesc.slice(0, 2000),
         coverImage,
-        totalTickets: Math.max(1, Math.min(100000, Number(totalTickets))),
+        totalTickets: Math.max(1, Math.min(maxTicketsLimit, Number(totalTickets))),
         ticketPrice: Math.max(0.01, Math.min(1000000, Number(ticketPrice))),
         currency,
         subdomain: trimmedName.toLowerCase().replace(/[^a-z0-9-]/g, '') || 'raffle',
@@ -304,18 +317,19 @@ export default function CreateRaffleModal({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-gray-600 uppercase tracking-widest">{t.totalTickets}</label>
-                <select
+                <label className="text-xs font-semibold text-gray-600 uppercase tracking-widest flex items-center justify-between">
+                  <span>{t.totalTickets}</span>
+                  <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-1.5 py-0.5 rounded-full">Max: {maxTicketsLimit}</span>
+                </label>
+                <input
                   id="form-raffle-totaltickets"
+                  type="number"
+                  min="1"
+                  max={maxTicketsLimit}
                   value={totalTickets}
                   onChange={(e) => setTotalTickets(Number(e.target.value))}
-                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-hidden focus:border-emerald-600 focus:bg-white cursor-pointer"
-                >
-                  <option value={100}>100 ({t.starterTitle} / Pro)</option>
-                  <option value={200}>200</option>
-                  <option value={500}>500</option>
-                  <option value={1000}>1,000</option>
-                </select>
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-hidden focus:border-emerald-600 focus:bg-white"
+                />
               </div>
 
               <div className="flex flex-col gap-1.5">

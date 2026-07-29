@@ -9,7 +9,7 @@ import PricingPlans from './components/PricingPlans';
 import PrizePaymentModal from './components/PrizePaymentModal';
 import { Raffle, TicketPurchase, AppNotification, UserProfile, Language } from './types';
 import { translations } from './translations';
-import { Gift, Award, Calendar, Bell, Volume2, HelpCircle, Flame, CheckCircle2, RefreshCw, ShieldCheck, Zap, ArrowRight, Star, Users, Check } from 'lucide-react';
+import { Gift, Award, Calendar, Bell, Volume2, HelpCircle, Flame, CheckCircle2, RefreshCw, ShieldCheck, Zap, ArrowRight, Star, Users, Check, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 // Firebase core integrations
@@ -61,6 +61,13 @@ export default function App() {
           if (userDocSnap.exists()) {
             const data = userDocSnap.data();
             const userRoleVal = data.role || data.initialRolePreference || 'client';
+            
+            let trialEndsAtVal = data.trialEndsAt;
+            if (!trialEndsAtVal) {
+              trialEndsAtVal = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+              updateDoc(userDocRef, { trialEndsAt: trialEndsAtVal }).catch(console.error);
+            }
+
             setCurrentUserProfile({
               name: data.name || user.displayName || 'Usuario',
               email: data.email || user.email || 'user@example.com',
@@ -68,7 +75,8 @@ export default function App() {
               tier: data.tier || 'Free',
               rafflesJoinedCount: data.rafflesJoinedCount || 0,
               ticketsPurchasedCount: data.ticketsPurchasedCount || 0,
-              role: userRoleVal
+              role: userRoleVal,
+              trialEndsAt: trialEndsAtVal
             });
             // Set user role based on profile role
             setUserRole(userRoleVal);
@@ -81,7 +89,8 @@ export default function App() {
               tier: 'Free',
               rafflesJoinedCount: 0,
               ticketsPurchasedCount: 0,
-              role: 'client'
+              role: 'client',
+              trialEndsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
             };
             await setDoc(userDocRef, newProfile);
             setCurrentUserProfile(newProfile);
@@ -618,29 +627,55 @@ export default function App() {
               transition={{ duration: 0.2 }}
             >
               {currentTab === 'dashboard' && (
-                selectedRaffleId ? (
-                  <div>
-                    <button
-                      id="back-to-campaign-list"
-                      onClick={() => setSelectedRaffleId(null)}
-                      className="mb-4 text-xs font-semibold text-gray-500 hover:text-emerald-700 transition-colors flex items-center gap-1 cursor-pointer focus:outline-hidden"
-                    >
-                      ← {selectedLanguage === 'es' ? 'Volver al Panel' : selectedLanguage === 'pt' ? 'Voltar ao Painel' : 'Back to Dashboard'}
-                    </button>
-                    <TicketBoard
-                      currentLanguage={selectedLanguage}
-                      raffle={raffles.find(r => r.id === selectedRaffleId)!}
-                      onPayClick={handlePayClick}
-                      onReserveClick={handleReserveClick}
-                      onTriggerDraw={handleTriggerDraw}
-                      userRole={userRole}
-                    />
-                  </div>
-                ) : (
+                (() => {
+                  const isTrialExpired = currentUserProfile?.tier === 'Free' && currentUserProfile?.trialEndsAt && new Date(currentUserProfile.trialEndsAt) < new Date();
+                  
+                  if (isTrialExpired) {
+                    return (
+                      <div className="bg-red-50 border border-red-200 rounded-2xl p-8 text-center max-w-2xl mx-auto mt-10">
+                        <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+                        <h2 className="text-xl font-bold text-gray-900 mb-2">
+                          {selectedLanguage === 'es' ? 'Tu periodo de prueba ha terminado' : 'Your trial period has ended'}
+                        </h2>
+                        <p className="text-gray-600 mb-6 text-sm">
+                          {selectedLanguage === 'es' 
+                            ? 'El acceso gratuito de 7 días ha concluido. Para seguir utilizando RifaSaaS y mantener tus sorteos activos, por favor adquiere un plan.'
+                            : 'The 7-day free access has concluded. To continue using RifaSaaS and keep your raffles active, please purchase a plan.'}
+                        </p>
+                        <button
+                          onClick={() => setCurrentTab('pricing')}
+                          className="bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-emerald-700 transition-colors cursor-pointer"
+                        >
+                          {selectedLanguage === 'es' ? 'Ver Planes de Suscripción' : 'View Subscription Plans'}
+                        </button>
+                      </div>
+                    );
+                  }
+
+                  return selectedRaffleId ? (
+                    <div>
+                      <button
+                        id="back-to-campaign-list"
+                        onClick={() => setSelectedRaffleId(null)}
+                        className="mb-4 text-xs font-semibold text-gray-500 hover:text-emerald-700 transition-colors flex items-center gap-1 cursor-pointer focus:outline-hidden"
+                      >
+                        ← {selectedLanguage === 'es' ? 'Volver al Panel' : selectedLanguage === 'pt' ? 'Voltar ao Painel' : 'Back to Dashboard'}
+                      </button>
+                      <TicketBoard
+                        currentLanguage={selectedLanguage}
+                        raffle={raffles.find(r => r.id === selectedRaffleId)!}
+                        onPayClick={handlePayClick}
+                        onReserveClick={handleReserveClick}
+                        onTriggerDraw={handleTriggerDraw}
+                        userRole={userRole}
+                      />
+                    </div>
+                  ) : (
                   <OrganizerDashboard
                     currentLanguage={selectedLanguage}
                     raffles={raffles}
                     recentPurchases={cumulativePurchases}
+                    userTier={currentUserProfile?.tier || 'Free'}
                     onCreateRaffleClick={() => {
                       setEditingRaffle(null);
                       setIsCreateModalOpen(true);
@@ -652,11 +687,12 @@ export default function App() {
                     onTriggerManualDraw={handleManualDraw}
                     onToggleRaffleStatus={handleToggleRaffleStatus}
                   />
-                )
+                );
+              })()
               )}
 
               {currentTab === 'pricing' && (
-                <PricingPlans currentLanguage={selectedLanguage} />
+                <PricingPlans currentLanguage={selectedLanguage} userTier={currentUserProfile?.tier || 'Free'} />
               )}
             </motion.div>
 
@@ -1101,6 +1137,7 @@ export default function App() {
         }}
         onSubmit={handleCreateRaffleSubmit}
         editingRaffle={editingRaffle}
+        userTier={currentUserProfile?.tier || 'Free'}
       />
 
       {/* SIMULATED PAYMENT DIALOG MODAL POPUP OVERLAY */}

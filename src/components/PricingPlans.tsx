@@ -3,14 +3,39 @@ import { translations } from '../translations';
 import { Language } from '../types';
 import { Check, Shield, CircleCheck, Star, Award, Search, HelpCircle } from 'lucide-react';
 import { motion } from 'motion/react';
+import PlanPaymentModal from './PlanPaymentModal';
+import { auth, db } from '../firebase';
+import { doc, updateDoc } from 'firebase/firestore';
 
 interface PricingPlansProps {
   currentLanguage: Language;
+  userTier?: string;
 }
 
-export default function PricingPlans({ currentLanguage }: PricingPlansProps) {
+export default function PricingPlans({ currentLanguage, userTier = 'Free' }: PricingPlansProps) {
   const t = translations[currentLanguage];
   const [selectedPlan, setSelectedPlan] = useState<'starter' | 'medium' | 'pro'>('pro');
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [paymentPlanTier, setPaymentPlanTier] = useState<'Medium' | 'Pro' | 'Enterprise'>('Medium');
+  const [paymentPlanPrice, setPaymentPlanPrice] = useState('$14.99');
+
+  const handlePlanClick = (tier: 'Medium' | 'Pro' | 'Enterprise', price: string) => {
+    if (userTier === tier) return;
+    setPaymentPlanTier(tier);
+    setPaymentPlanPrice(price);
+    setIsPaymentModalOpen(true);
+  };
+
+  const handlePaymentSuccess = async (tier: 'Medium' | 'Pro' | 'Enterprise') => {
+    if (auth.currentUser) {
+      try {
+        const userRef = doc(db, 'users', auth.currentUser.uid);
+        await updateDoc(userRef, { tier });
+      } catch (err) {
+        console.error("Error updating tier:", err);
+      }
+    }
+  };
 
   return (
     <div className="space-y-12 py-4">
@@ -124,13 +149,16 @@ export default function PricingPlans({ currentLanguage }: PricingPlansProps) {
 
           <button
             id="plan-btn-medium"
+            onClick={() => handlePlanClick('Medium', '$14.99')}
             className={`w-full mt-8 py-3.5 font-semibold text-xs rounded-xl uppercase tracking-wider transition-all cursor-pointer ${
-              selectedPlan === 'medium'
-                ? 'bg-emerald-700 hover:bg-emerald-800 text-white shadow-md shadow-emerald-700/10'
-                : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
+              userTier === 'Medium'
+                ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
+                : selectedPlan === 'medium'
+                  ? 'bg-emerald-700 hover:bg-emerald-800 text-white shadow-md shadow-emerald-700/10'
+                  : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
             }`}
           >
-            {currentLanguage === 'es' ? 'Adquirir Plan Medium' : currentLanguage === 'pt' ? 'Adquirir Plano Medium' : 'Get Medium Plan'}
+            {userTier === 'Medium' ? (currentLanguage === 'es' ? 'Plan Actual' : 'Current Plan') : (currentLanguage === 'es' ? 'Adquirir Plan Medium' : currentLanguage === 'pt' ? 'Adquirir Plano Medium' : 'Get Medium Plan')}
           </button>
         </div>
 
@@ -226,6 +254,15 @@ export default function PricingPlans({ currentLanguage }: PricingPlansProps) {
 
       </section>
 
+      {/* Payment Modal for Plans */}
+      <PlanPaymentModal
+        currentLanguage={currentLanguage}
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
+        planTier={paymentPlanTier}
+        planPrice={paymentPlanPrice}
+        onSuccess={handlePaymentSuccess}
+      />
     </div>
   );
 }
