@@ -32,6 +32,8 @@ export interface Raffle {
   winnerName?: string;
   winnerEmail?: string;
   prizePaid?: boolean;
+  targetGoal?: number;
+  breakEvenCost?: number;
 }
 
 export interface AppNotification {

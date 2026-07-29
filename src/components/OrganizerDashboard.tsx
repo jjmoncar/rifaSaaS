@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { translations } from '../translations';
 import { Language, Raffle, TicketPurchase } from '../types';
-import { Play, Eye, Edit2, TrendingUp, Users, Ticket, DollarSign, Award, ArrowUpRight, CheckCircle } from 'lucide-react';
+import { Play, Eye, Edit2, TrendingUp, Users, Ticket, DollarSign, Award, ArrowUpRight, CheckCircle, BarChart3, PieChart, Trophy, CreditCard, AlertCircle, Target, Activity, Scale, ChevronRight } from 'lucide-react';
 
 interface OrganizerDashboardProps {
   currentLanguage: Language;
@@ -69,6 +69,121 @@ export default function OrganizerDashboard({
   const completionPercent = activeRaffle 
     ? Math.min(100, Math.round((activeRaffle.soldTickets.length / activeRaffle.totalTickets) * 100))
     : 0;
+
+  // Filter for real-time reports: 'all' or specific raffle ID
+  const [reportFilterRaffleId, setReportFilterRaffleId] = useState<string>('all');
+
+  const selectedRafflesForReport = reportFilterRaffleId === 'all'
+    ? raffles
+    : raffles.filter(r => r.id === reportFilterRaffleId);
+
+  // 1. Recaudación actual vs. Meta (Barra de progreso visual)
+  const repCurrentRevenue = selectedRafflesForReport.reduce((acc, r) => {
+    const succ = r.purchases.filter(p => p.status === 'Successful').reduce((sum, p) => sum + p.amount, 0);
+    return acc + succ;
+  }, 0);
+
+  const repTargetGoal = selectedRafflesForReport.reduce((acc, r) => {
+    const goal = r.targetGoal !== undefined && r.targetGoal > 0
+      ? r.targetGoal
+      : (r.totalTickets * r.ticketPrice);
+    return acc + goal;
+  }, 0);
+
+  const repGoalPercent = repTargetGoal > 0
+    ? Math.min(100, Math.round((repCurrentRevenue / repTargetGoal) * 100))
+    : 0;
+
+  const repRemainingGoal = Math.max(0, repTargetGoal - repCurrentRevenue);
+
+  // 2. Boletos disponibles vs. Boletos vendidos vs. Boletos reservados
+  const repTotalTickets = selectedRafflesForReport.reduce((acc, r) => acc + r.totalTickets, 0);
+  const repSoldTickets = selectedRafflesForReport.reduce((acc, r) => acc + r.soldTickets.length, 0);
+  const repReservedTickets = selectedRafflesForReport.reduce((acc, r) => acc + (r.reservedTickets ? r.reservedTickets.length : 0), 0);
+  const repAvailableTickets = Math.max(0, repTotalTickets - repSoldTickets - repReservedTickets);
+
+  const repSoldPct = repTotalTickets > 0 ? Math.round((repSoldTickets / repTotalTickets) * 100) : 0;
+  const repReservedPct = repTotalTickets > 0 ? Math.round((repReservedTickets / repTotalTickets) * 100) : 0;
+  const repAvailablePct = repTotalTickets > 0 ? Math.max(0, 100 - repSoldPct - repReservedPct) : 0;
+
+  // 3. Punto de equilibrio alcanzado (Sí / No)
+  const repBreakEvenCost = selectedRafflesForReport.reduce((acc, r) => {
+    const cost = r.breakEvenCost !== undefined && r.breakEvenCost >= 0
+      ? r.breakEvenCost
+      : (r.totalTickets * r.ticketPrice * 0.5);
+    return acc + cost;
+  }, 0);
+
+  const isBreakEvenReached = repCurrentRevenue >= repBreakEvenCost;
+  const repBreakEvenPct = repBreakEvenCost > 0
+    ? Math.min(100, Math.round((repCurrentRevenue / repBreakEvenCost) * 100))
+    : 0;
+  const repBreakEvenDiff = Math.max(0, repBreakEvenCost - repCurrentRevenue);
+
+  // 4. Ventas por canal de pago (PayPal, PIX)
+  const paymentChannelMap: Record<string, { name: string; amount: number; count: number; badgeColor: string; key: string }> = {};
+
+  selectedRafflesForReport.forEach(r => {
+    r.purchases.forEach(p => {
+      if (p.status === 'Successful') {
+        let channelName = p.paymentMethod || 'Otros';
+        let key = 'other';
+        let badgeColor = 'bg-gray-100 text-gray-700 border-gray-200';
+
+        if (channelName.toLowerCase().includes('pix')) {
+          channelName = 'PIX (Pagos Instantáneos)';
+          key = 'pix';
+          badgeColor = 'bg-teal-50 text-teal-800 border-teal-200';
+        } else if (channelName.toLowerCase().includes('paypal')) {
+          channelName = 'PayPal';
+          key = 'paypal';
+          badgeColor = 'bg-blue-50 text-blue-800 border-blue-200';
+        } else if (channelName.toLowerCase().includes('card') || channelName.toLowerCase().includes('tarjeta')) {
+          channelName = 'Tarjeta de Crédito';
+          key = 'card';
+          badgeColor = 'bg-purple-50 text-purple-800 border-purple-200';
+        } else if (channelName.toLowerCase().includes('pi')) {
+          channelName = 'Pi Network Wallet';
+          key = 'pi';
+          badgeColor = 'bg-amber-50 text-amber-800 border-amber-200';
+        }
+
+        if (!paymentChannelMap[channelName]) {
+          paymentChannelMap[channelName] = { name: channelName, amount: 0, count: 0, badgeColor, key };
+        }
+        paymentChannelMap[channelName].amount += p.amount;
+        paymentChannelMap[channelName].count += 1;
+      }
+    });
+  });
+
+  const paymentChannelsList = Object.values(paymentChannelMap).sort((a, b) => b.amount - a.amount);
+  const totalChannelRevenue = paymentChannelsList.reduce((acc, c) => acc + c.amount, 0);
+
+  // 5. Top de compradores
+  const buyerMap: Record<string, { name: string; email: string; totalTickets: number; totalSpent: number }> = {};
+
+  selectedRafflesForReport.forEach(r => {
+    r.purchases.forEach(p => {
+      if (p.status === 'Successful' && (p.buyerEmail || p.buyerName)) {
+        const key = p.buyerEmail ? p.buyerEmail.toLowerCase() : p.buyerName.toLowerCase();
+        if (!buyerMap[key]) {
+          buyerMap[key] = {
+            name: p.buyerName || 'Comprador Anónimo',
+            email: p.buyerEmail || 'sin-email@rifasaas.com',
+            totalTickets: 0,
+            totalSpent: 0
+          };
+        }
+        buyerMap[key].totalTickets += 1;
+        buyerMap[key].totalSpent += p.amount;
+      }
+    });
+  });
+
+  const topBuyersList = Object.values(buyerMap)
+    .sort((a, b) => b.totalTickets !== a.totalTickets ? b.totalTickets - a.totalTickets : b.totalSpent - a.totalSpent)
+    .slice(0, 5);
 
   return (
     <div className="space-y-6">
@@ -162,6 +277,332 @@ export default function OrganizerDashboard({
               {completionPercent}%
             </p>
           </div>
+        </div>
+
+      </div>
+
+      {/* Real-Time Analytics & 5 Core Reports Section */}
+      <div className="bg-white p-6 rounded-2xl border border-gray-150 shadow-xs space-y-6">
+        
+        {/* Reports Header with Filter */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-emerald-50 rounded-xl text-emerald-700">
+              <BarChart3 size={22} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-extrabold text-gray-900 tracking-tight">
+                  {t.realTimeReportsTitle || 'Reportes y Analíticas en Tiempo Real'}
+                </h2>
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-600" />
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 mt-0.5">
+                {t.realTimeReportsSub || 'Monitoreo en vivo de ingresos, boletos, punto de equilibrio y compradores.'}
+              </p>
+            </div>
+          </div>
+
+          {/* Campaign Filter Dropdown */}
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-xs font-semibold text-gray-500">{t.selectRaffleFilter || 'Filtrar'}:</span>
+            <select
+              id="report-raffle-filter"
+              value={reportFilterRaffleId}
+              onChange={(e) => setReportFilterRaffleId(e.target.value)}
+              className="bg-gray-50 border border-gray-250 text-xs font-bold text-gray-800 rounded-xl px-3 py-2 focus:outline-hidden focus:border-emerald-600 focus:bg-white cursor-pointer transition-all"
+            >
+              <option value="all">{t.allRafflesView || 'Todas las Rifas (Vista Global)'}</option>
+              {raffles.map(r => (
+                <option key={r.id} value={r.id}>{r.name}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* 5 Real-Time Reports Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+          {/* Reporte 1: Recaudación actual vs. Meta */}
+          <div className="bg-gradient-to-br from-emerald-50/60 via-white to-gray-50/50 p-5 rounded-xl border border-emerald-100/80 shadow-2xs flex flex-col justify-between hover:shadow-xs transition-all">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-emerald-800 font-bold text-xs uppercase tracking-wider">
+                <Target size={16} className="text-emerald-600" />
+                <span>{t.revenueVsGoal || '1. Recaudación vs. Meta'}</span>
+              </div>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${repGoalPercent >= 100 ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-emerald-50 text-emerald-700'}`}>
+                {repGoalPercent}%
+              </span>
+            </div>
+
+            <div className="my-3 space-y-1">
+              <div className="flex items-baseline justify-between">
+                <span className="text-2xl font-extrabold text-gray-900">
+                  ${repCurrentRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+                <span className="text-xs font-bold text-gray-500">
+                  / ${repTargetGoal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+              </div>
+              <p className="text-[11px] text-gray-500 font-medium">
+                {repGoalPercent >= 100 ? (
+                  <span className="text-emerald-700 font-bold flex items-center gap-1">
+                    <CheckCircle size={12} /> {t.goalReached || '¡Meta Alcanzada!'}
+                  </span>
+                ) : (
+                  <span>{t.remainingToGoal || 'Faltan'}: <strong className="text-gray-800">${repRemainingGoal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>
+                )}
+              </p>
+            </div>
+
+            {/* Visual Progress Bar */}
+            <div className="space-y-1">
+              <div className="w-full bg-gray-150 h-3 rounded-full overflow-hidden block">
+                <div
+                  className="bg-gradient-to-r from-emerald-500 to-teal-600 h-full rounded-full transition-all duration-1000 ease-out"
+                  style={{ width: `${repGoalPercent}%` }}
+                />
+              </div>
+              <div className="flex justify-between text-[10px] text-gray-400 font-semibold">
+                <span>0%</span>
+                <span>50%</span>
+                <span>100%</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Reporte 2: Boletos disponibles vs. Boletos vendidos vs. Boletos reservados */}
+          <div className="bg-gradient-to-br from-blue-50/40 via-white to-gray-50/50 p-5 rounded-xl border border-blue-100/80 shadow-2xs flex flex-col justify-between hover:shadow-xs transition-all">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-blue-900 font-bold text-xs uppercase tracking-wider">
+                <Ticket size={16} className="text-blue-600" />
+                <span>{t.ticketInventoryBreakdown || '2. Boletos (Inventario)'}</span>
+              </div>
+              <span className="text-[10px] font-bold px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full">
+                {repTotalTickets} total
+              </span>
+            </div>
+
+            <div className="my-3 space-y-2">
+              {/* Tri-color Segmented Progress Bar */}
+              <div className="w-full bg-gray-100 h-3 rounded-full overflow-hidden flex block shadow-inner">
+                <div
+                  title={`Vendidos: ${repSoldTickets} (${repSoldPct}%)`}
+                  className="bg-emerald-600 h-full transition-all duration-700"
+                  style={{ width: `${repSoldPct}%` }}
+                />
+                <div
+                  title={`Reservados: ${repReservedTickets} (${repReservedPct}%)`}
+                  className="bg-amber-500 h-full transition-all duration-700"
+                  style={{ width: `${repReservedPct}%` }}
+                />
+                <div
+                  title={`Disponibles: ${repAvailableTickets} (${repAvailablePct}%)`}
+                  className="bg-gray-200 h-full transition-all duration-700"
+                  style={{ width: `${repAvailablePct}%` }}
+                />
+              </div>
+
+              {/* Counts legend */}
+              <div className="grid grid-cols-3 gap-1 pt-1 text-center">
+                <div className="bg-emerald-50 border border-emerald-100 p-1.5 rounded-lg">
+                  <p className="text-[10px] font-bold text-emerald-800 uppercase">{t.soldTicketsLabel || 'Vendidos'}</p>
+                  <p className="text-sm font-extrabold text-emerald-900">{repSoldTickets}</p>
+                  <p className="text-[9px] text-emerald-600 font-semibold">{repSoldPct}%</p>
+                </div>
+                <div className="bg-amber-50 border border-amber-100 p-1.5 rounded-lg">
+                  <p className="text-[10px] font-bold text-amber-800 uppercase">{t.reservedTicketsLabel || 'Reservados'}</p>
+                  <p className="text-sm font-extrabold text-amber-900">{repReservedTickets}</p>
+                  <p className="text-[9px] text-amber-600 font-semibold">{repReservedPct}%</p>
+                </div>
+                <div className="bg-gray-50 border border-gray-200 p-1.5 rounded-lg">
+                  <p className="text-[10px] font-bold text-gray-600 uppercase">{t.availableTickets || 'Disponibles'}</p>
+                  <p className="text-sm font-extrabold text-gray-800">{repAvailableTickets}</p>
+                  <p className="text-[9px] text-gray-500 font-semibold">{repAvailablePct}%</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Reporte 3: Punto de equilibrio alcanzado (Sí / No) */}
+          <div className={`p-5 rounded-xl border shadow-2xs flex flex-col justify-between transition-all ${
+            isBreakEvenReached 
+              ? 'bg-gradient-to-br from-emerald-500/10 via-white to-emerald-50/30 border-emerald-300'
+              : 'bg-gradient-to-br from-amber-500/10 via-white to-amber-50/30 border-amber-300'
+          }`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 font-bold text-xs uppercase tracking-wider text-gray-800">
+                <Scale size={16} className={isBreakEvenReached ? 'text-emerald-600' : 'text-amber-600'} />
+                <span>{t.breakEvenPoint || '3. Punto de Equilibrio'}</span>
+              </div>
+              <span className={`inline-flex items-center gap-1 text-[11px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider shadow-2xs ${
+                isBreakEvenReached
+                  ? 'bg-emerald-600 text-white shadow-emerald-600/20'
+                  : 'bg-amber-500 text-white shadow-amber-500/20'
+              }`}>
+                {isBreakEvenReached ? <CheckCircle size={12} /> : <AlertCircle size={12} />}
+                {isBreakEvenReached ? `${t.breakEvenYes || 'Sí'} - Alcanzado` : `${t.breakEvenNo || 'No'} - Pendiente`}
+              </span>
+            </div>
+
+            <div className="my-3 space-y-1.5">
+              <div className="flex justify-between items-baseline">
+                <span className="text-xs text-gray-500 font-semibold">{t.breakEvenCostLabel || 'Umbral Costo'}:</span>
+                <span className="text-sm font-extrabold text-gray-900">${repBreakEvenCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              </div>
+              <div className="flex justify-between items-baseline">
+                <span className="text-xs text-gray-500 font-semibold">{t.currentRevenueLabel || 'Recaudado'}:</span>
+                <span className="text-sm font-extrabold text-emerald-700">${repCurrentRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              </div>
+              
+              <div className="w-full bg-gray-150 h-2.5 rounded-full overflow-hidden block mt-1">
+                <div
+                  className={`h-full rounded-full transition-all duration-700 ${isBreakEvenReached ? 'bg-emerald-600' : 'bg-amber-500'}`}
+                  style={{ width: `${repBreakEvenPct}%` }}
+                />
+              </div>
+            </div>
+
+            <p className="text-[11px] text-gray-600 italic leading-snug">
+              {isBreakEvenReached
+                ? (t.breakEvenDescReached || '¡Excelente! La campaña ya ha cubierto sus costos y genera ganancias.')
+                : (t.breakEvenDescPending ? t.breakEvenDescPending.replace('{amount}', `$${repBreakEvenDiff.toFixed(2)}`) : `Faltan $${repBreakEvenDiff.toFixed(2)} para cubrir el costo de equilibrio.`)}
+            </p>
+          </div>
+
+        </div>
+
+        {/* Reports Grid Row 2: Payment Channels (PayPal, PIX) & Top Buyers */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 pt-2">
+
+          {/* Reporte 4: Ventas por canal de pago (PayPal, PIX) */}
+          <div className="bg-white p-5 rounded-xl border border-gray-150 shadow-2xs space-y-4">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-purple-50 rounded-lg text-purple-700">
+                  <CreditCard size={18} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-extrabold text-gray-900 uppercase tracking-wide">
+                    {t.paymentChannelSales || '4. Ventas por Canal de Pago (PayPal, PIX)'}
+                  </h3>
+                  <p className="text-[11px] text-gray-500">Distribución de ingresos por pasarela</p>
+                </div>
+              </div>
+              <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
+                ${totalChannelRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+            </div>
+
+            {paymentChannelsList.length === 0 ? (
+              <p className="text-xs text-gray-400 italic text-center py-6">
+                {t.noPaymentData || 'Sin transacciones completadas aún.'}
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {paymentChannelsList.map((ch, idx) => {
+                  const sharePct = totalChannelRevenue > 0 ? Math.round((ch.amount / totalChannelRevenue) * 100) : 0;
+                  return (
+                    <div key={idx} className="p-3 rounded-xl border border-gray-100 bg-gray-50/50 hover:bg-gray-50 transition-colors">
+                      <div className="flex justify-between items-center mb-1.5">
+                        <span className={`text-xs font-extrabold px-2.5 py-0.5 rounded-full border ${ch.badgeColor}`}>
+                          {ch.name}
+                        </span>
+                        <div className="text-right">
+                          <span className="text-xs font-extrabold text-gray-900">
+                            ${ch.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                          <span className="text-[10px] text-gray-400 ml-2 font-semibold">({ch.count} txn - {sharePct}%)</span>
+                        </div>
+                      </div>
+                      <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden block">
+                        <div
+                          className={`h-full rounded-full transition-all duration-700 ${
+                            ch.key === 'pix' ? 'bg-teal-500' : ch.key === 'paypal' ? 'bg-blue-600' : 'bg-purple-600'
+                          }`}
+                          style={{ width: `${sharePct}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Reporte 5: Top de compradores */}
+          <div className="bg-white p-5 rounded-xl border border-gray-150 shadow-2xs space-y-4">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-amber-50 rounded-lg text-amber-600">
+                  <Trophy size={18} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-extrabold text-gray-900 uppercase tracking-wide">
+                    {t.topBuyers || '5. Top de Compradores'}
+                  </h3>
+                  <p className="text-[11px] text-gray-500">{t.topBuyersSub || 'Clientes con mayor volumen de boletos comprados'}</p>
+                </div>
+              </div>
+              <span className="text-[10px] font-bold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-full uppercase tracking-wider">
+                Leaderboard
+              </span>
+            </div>
+
+            {topBuyersList.length === 0 ? (
+              <p className="text-xs text-gray-400 italic text-center py-6">
+                {t.noBuyersYet || 'No hay registros de compras aún.'}
+              </p>
+            ) : (
+              <div className="space-y-2.5">
+                {topBuyersList.map((buyer, index) => {
+                  const initials = buyer.name
+                    .split(' ')
+                    .map(n => n[0])
+                    .join('')
+                    .toUpperCase()
+                    .slice(0, 2);
+
+                  const rankColor = index === 0 ? 'bg-amber-400 text-amber-950 border-amber-300'
+                                  : index === 1 ? 'bg-slate-300 text-slate-800 border-slate-200'
+                                  : index === 2 ? 'bg-amber-700/80 text-amber-50 border-amber-600'
+                                  : 'bg-gray-100 text-gray-700 border-gray-200';
+
+                  return (
+                    <div key={index} className="flex items-center justify-between p-2.5 rounded-xl border border-gray-100 bg-gray-50/40 hover:bg-gray-50 transition-colors">
+                      <div className="flex items-center gap-3 min-w-0">
+                        {/* Rank medal badge */}
+                        <div className={`w-7 h-7 rounded-full shrink-0 flex items-center justify-center font-extrabold text-xs border shadow-2xs ${rankColor}`}>
+                          #{index + 1}
+                        </div>
+                        {/* Avatar */}
+                        <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 font-bold text-xs flex items-center justify-center shrink-0">
+                          {initials}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-gray-900 truncate">{buyer.name}</p>
+                          <p className="text-[10px] text-gray-400 truncate">{buyer.email}</p>
+                        </div>
+                      </div>
+
+                      <div className="text-right shrink-0">
+                        <span className="inline-block text-xs font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+                          {buyer.totalTickets} {buyer.totalTickets === 1 ? 'boleto' : 'boletos'}
+                        </span>
+                        <p className="text-[11px] font-bold text-gray-700 mt-0.5">
+                          ${buyer.totalSpent.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
         </div>
 
       </div>

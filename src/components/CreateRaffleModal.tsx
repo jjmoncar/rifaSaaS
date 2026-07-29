@@ -61,6 +61,8 @@ export default function CreateRaffleModal({
     return nextWeek.toISOString().slice(0, 16);
   });
   const [drawMethod, setDrawMethod] = useState<'Automatic' | 'Live Stream'>('Automatic');
+  const [targetGoal, setTargetGoal] = useState<number | undefined>(undefined);
+  const [breakEvenCost, setBreakEvenCost] = useState<number | undefined>(undefined);
 
   const [isPublishing, setIsPublishing] = useState(false);
   const [showValidationWarning, setShowValidationWarning] = useState(false);
@@ -76,6 +78,8 @@ export default function CreateRaffleModal({
       setStartDate(editingRaffle.startDate);
       setDrawDate(editingRaffle.drawDate);
       setDrawMethod(editingRaffle.drawMethod as any);
+      setTargetGoal(editingRaffle.targetGoal);
+      setBreakEvenCost(editingRaffle.breakEvenCost);
     } else {
       setName('');
       setDescription('');
@@ -83,6 +87,8 @@ export default function CreateRaffleModal({
       setTotalTickets(100);
       setTicketPrice(10.0);
       setCurrency('USD');
+      setTargetGoal(undefined);
+      setBreakEvenCost(undefined);
     }
   }, [editingRaffle, isOpen]);
 
@@ -150,7 +156,9 @@ export default function CreateRaffleModal({
         subdomain: trimmedName.toLowerCase().replace(/[^a-z0-9-]/g, '') || 'raffle',
         startDate,
         drawDate,
-        drawMethod
+        drawMethod,
+        targetGoal: targetGoal && targetGoal > 0 ? targetGoal : Math.max(1, Math.min(maxTicketsLimit, Number(totalTickets))) * Math.max(0.01, Math.min(1000000, Number(ticketPrice))),
+        breakEvenCost: breakEvenCost && breakEvenCost > 0 ? breakEvenCost : (Math.max(1, Math.min(maxTicketsLimit, Number(totalTickets))) * Math.max(0.01, Math.min(1000000, Number(ticketPrice)))) * 0.5
       });
       setIsPublishing(false);
       onClose();
@@ -426,6 +434,48 @@ export default function CreateRaffleModal({
                   <option value="Live Stream">{t.liveStream}</option>
                 </select>
                 <p className="text-xs text-gray-500 italic mt-0.5">{t.automaticRecommend}</p>
+              </div>
+            </div>
+          </section>
+
+          {/* Section 4: Financial Goals & Break-Even */}
+          <section className="bg-white border border-gray-200 rounded-xl p-5 shadow-xs space-y-4">
+            <h3 className="text-sm font-semibold text-emerald-800 flex items-center gap-2 border-b border-gray-50 pb-2">
+              <Info size={16} />
+              {t.financialConfig || 'Metas Financieras y Punto de Equilibrio'}
+            </h3>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-gray-600 uppercase tracking-widest">
+                  {t.targetGoalInput || 'Meta Financiera Objetivo ($)'}
+                </label>
+                <input
+                  id="form-raffle-targetgoal"
+                  type="number"
+                  step="0.01"
+                  min="1"
+                  placeholder={`Por defecto: $${(totalTickets * ticketPrice).toFixed(2)}`}
+                  value={targetGoal !== undefined ? targetGoal : ''}
+                  onChange={(e) => setTargetGoal(e.target.value ? parseFloat(e.target.value) : undefined)}
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-hidden focus:border-emerald-600 focus:bg-white"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-gray-600 uppercase tracking-widest">
+                  {t.breakEvenCostInput || 'Costo del Punto de Equilibrio ($)'}
+                </label>
+                <input
+                  id="form-raffle-breakeven"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder={`Por defecto (50%): $${((totalTickets * ticketPrice) * 0.5).toFixed(2)}`}
+                  value={breakEvenCost !== undefined ? breakEvenCost : ''}
+                  onChange={(e) => setBreakEvenCost(e.target.value ? parseFloat(e.target.value) : undefined)}
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-hidden focus:border-emerald-600 focus:bg-white"
+                />
               </div>
             </div>
           </section>
