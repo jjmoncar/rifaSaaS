@@ -17,15 +17,25 @@ interface AuthModalProps {
   onClose: () => void;
   currentLanguage: Language;
   onAuthSuccess: (profile: UserProfile, isNewUser: boolean) => void;
+  initialMode?: 'login' | 'register';
 }
 
 export default function AuthModal({
   isOpen,
   onClose,
   currentLanguage,
-  onAuthSuccess
+  onAuthSuccess,
+  initialMode = 'login'
 }: AuthModalProps) {
   const [isLogin, setIsLogin] = useState(true);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      setIsLogin(initialMode === 'login');
+      setErrorMsg(null);
+      setSuccessMsg(null);
+    }
+  }, [isOpen, initialMode]);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');

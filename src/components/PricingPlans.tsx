@@ -10,29 +10,48 @@ import { doc, updateDoc } from 'firebase/firestore';
 interface PricingPlansProps {
   currentLanguage: Language;
   userTier?: string;
+  isLoggedIn?: boolean;
+  onOpenAuth?: (mode?: 'login' | 'register') => void;
 }
 
-export default function PricingPlans({ currentLanguage, userTier = 'Free' }: PricingPlansProps) {
+export default function PricingPlans({ 
+  currentLanguage, 
+  userTier = 'Free',
+  isLoggedIn = false,
+  onOpenAuth
+}: PricingPlansProps) {
   const t = translations[currentLanguage];
   const [selectedPlan, setSelectedPlan] = useState<'starter' | 'medium' | 'pro'>('pro');
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [paymentPlanTier, setPaymentPlanTier] = useState<'Medium' | 'Pro' | 'Enterprise'>('Medium');
   const [paymentPlanPrice, setPaymentPlanPrice] = useState('$14.99');
 
+  const handleStarterClick = () => {
+    if (!isLoggedIn) {
+      onOpenAuth?.('register');
+      return;
+    }
+  };
+
   const handlePlanClick = (tier: 'Medium' | 'Pro' | 'Enterprise', price: string) => {
     if (userTier === tier) return;
+    if (!isLoggedIn) {
+      onOpenAuth?.('register');
+      return;
+    }
     setPaymentPlanTier(tier);
     setPaymentPlanPrice(price);
     setIsPaymentModalOpen(true);
   };
 
   const handlePaymentSuccess = async (tier: 'Medium' | 'Pro' | 'Enterprise') => {
+    console.log(`Payment success for tier ${tier}. Waiting for webhook to process...`);
     if (auth.currentUser) {
       try {
-        const userRef = doc(db, 'users', auth.currentUser.uid);
-        await updateDoc(userRef, { tier });
+        const userDocRef = doc(db, 'users', auth.currentUser.uid);
+        await updateDoc(userDocRef, { tier: tier });
       } catch (err) {
-        console.error("Error updating tier:", err);
+        console.error("Error updating user profile tier:", err);
       }
     }
   };
@@ -88,13 +107,18 @@ export default function PricingPlans({ currentLanguage, userTier = 'Free' }: Pri
 
           <button
             id="plan-btn-starter"
-            className={`w-full mt-8 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all border ${
-              selectedPlan === 'starter'
-                ? 'bg-emerald-700 border-emerald-700 text-white shadow-md'
-                : 'bg-white border-gray-250 text-gray-600 hover:text-emerald-700 hover:border-emerald-600'
+            onClick={handleStarterClick}
+            className={`w-full mt-8 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all border cursor-pointer ${
+              userTier === 'Free' || userTier === 'Starter'
+                ? 'bg-gray-100 border-gray-200 text-gray-500 cursor-not-allowed'
+                : selectedPlan === 'starter'
+                  ? 'bg-emerald-700 border-emerald-700 text-white shadow-md'
+                  : 'bg-white border-gray-250 text-gray-600 hover:text-emerald-700 hover:border-emerald-600'
             }`}
           >
-            {t.getStarted}
+            {isLoggedIn && (userTier === 'Free' || userTier === 'Starter') 
+              ? (currentLanguage === 'es' ? 'Plan Actual' : currentLanguage === 'pt' ? 'Plano Atual' : 'Current Plan') 
+              : t.getStarted}
           </button>
         </div>
 

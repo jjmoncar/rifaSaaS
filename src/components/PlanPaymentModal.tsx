@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X, CheckCircle, ShieldCheck, AlertCircle } from 'lucide-react';
 import { Language } from '../types';
 import { PayPalButtons } from '@paypal/react-paypal-js';
+import { auth } from '../firebase';
 
 interface PlanPaymentModalProps {
   currentLanguage: Language;
@@ -36,25 +37,23 @@ export default function PlanPaymentModal({
   const rawNumericVal = parseFloat(planPrice.replace(/[^0-9.]/g, ''));
   const numericPrice = !isNaN(rawNumericVal) && rawNumericVal > 0 ? rawNumericVal : (planTier === 'Enterprise' ? 99 : 29);
 
-  const handleCreateOrder = (data: any, actions: any) => {
-    return actions.order.create({
-      purchase_units: [
-        {
-          description: `Suscripción Plan ${planTier} - RifaSaaS`,
-          amount: {
-            currency_code: 'USD',
-            value: numericPrice.toFixed(2),
-          },
-        },
-      ],
+  const PAYPAL_PLAN_IDS: Record<string, string> = {
+    Medium: 'P-MEDIUM123',
+    Pro: 'P-PRO456',
+    Enterprise: 'P-ENTERPRISE789'
+  };
+
+  const handleCreateSubscription = (data: any, actions: any) => {
+    return actions.subscription.create({
+      plan_id: PAYPAL_PLAN_IDS[planTier],
+      custom_id: auth.currentUser?.uid
     });
   };
 
-  const handleApproveOrder = async (data: any, actions: any) => {
+  const handleApproveSubscription = async (data: any, actions: any) => {
     setStep('processing');
     try {
-      const details = await actions.order?.capture();
-      console.log('PayPal Plan Payment Successful:', details);
+      console.log('PayPal Subscription Successful:', data.subscriptionID);
       setStep('success');
       setTimeout(() => {
         onSuccess(planTier);
@@ -141,9 +140,9 @@ export default function PlanPaymentModal({
 
                   <div className="min-h-[120px] rounded-xl overflow-hidden pt-1">
                     <PayPalButtons
-                      style={{ layout: 'vertical', color: 'gold', shape: 'rect', label: 'pay' }}
-                      createOrder={handleCreateOrder}
-                      onApprove={handleApproveOrder}
+                      style={{ layout: 'vertical', color: 'gold', shape: 'rect', label: 'subscribe' }}
+                      createSubscription={handleCreateSubscription}
+                      onApprove={handleApproveSubscription}
                       onError={(err) => {
                         console.error('PayPal SDK error:', err);
                         setPaypalError(currentLanguage === 'es' ? 'No se pudo cargar el portal de PayPal. Usa el botón rápido abajo.' : 'Could not load PayPal gateway. Use quick checkout below.');

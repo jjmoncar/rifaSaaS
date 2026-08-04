@@ -46,6 +46,7 @@ export default function App() {
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
   const [isPrivacyOpen, setIsPrivacyOpen] = useState(false);
   const [isTermsOpen, setIsTermsOpen] = useState(false);
 
@@ -577,8 +578,13 @@ export default function App() {
 
   const unreadAlertsCount = notifications.filter(a => !a.read).length;
 
+  const metaEnv = (import.meta as any).env || {};
+  const paypalClientId = metaEnv.VITE_PAYPAL_ENV === 'live' 
+    ? metaEnv.VITE_PAYPAL_CLIENT_ID_LIVE 
+    : metaEnv.VITE_PAYPAL_CLIENT_ID_SANDBOX;
+
   return (
-    <PayPalScriptProvider options={{ clientId: import.meta.env.VITE_PAYPAL_CLIENT_ID || 'test', currency: 'USD' }}>
+    <PayPalScriptProvider options={{ clientId: paypalClientId || 'test', currency: 'USD', intent: 'subscription', vault: true }}>
       <div className="min-h-screen bg-gray-50/70 text-gray-900 font-sans flex flex-col pt-16">
       
       {/* Platform Navigation Header */}
@@ -588,6 +594,7 @@ export default function App() {
         userRole={userRole}
         onRoleToggle={(role) => {
           if (!isLoggedIn && role === 'organizer') {
+            setAuthModalMode('register');
             setIsAuthModalOpen(true);
             return;
           }
@@ -598,6 +605,7 @@ export default function App() {
         currentTab={currentTab}
         onTabChange={(tab) => {
           if (!isLoggedIn && (tab === 'mytickets' || tab === 'profile')) {
+            setAuthModalMode('login');
             setIsAuthModalOpen(true);
             return;
           }
@@ -609,7 +617,10 @@ export default function App() {
         unreadNotificationsCount={unreadAlertsCount}
         onAlertsClick={() => setIsAlertsOpen(true)}
         isLoggedIn={isLoggedIn}
-        onAuthBtnClick={() => setIsAuthModalOpen(true)}
+        onAuthBtnClick={() => {
+          setAuthModalMode('login');
+          setIsAuthModalOpen(true);
+        }}
       />
 
       {/* Main Container Area */}
@@ -694,7 +705,15 @@ export default function App() {
               )}
 
               {currentTab === 'pricing' && (
-                <PricingPlans currentLanguage={selectedLanguage} userTier={currentUserProfile?.tier || 'Free'} />
+                <PricingPlans 
+                  currentLanguage={selectedLanguage} 
+                  userTier={currentUserProfile?.tier || 'Free'} 
+                  isLoggedIn={isLoggedIn}
+                  onOpenAuth={(mode) => {
+                    setAuthModalMode(mode || 'register');
+                    setIsAuthModalOpen(true);
+                  }}
+                />
               )}
             </motion.div>
 
@@ -785,7 +804,10 @@ export default function App() {
                             
                             {!isLoggedIn && (
                               <button
-                                onClick={() => setIsAuthModalOpen(true)}
+                                onClick={() => {
+                                  setAuthModalMode('register');
+                                  setIsAuthModalOpen(true);
+                                }}
                                 className="w-full sm:w-auto px-8 py-4 bg-white/5 hover:bg-white/10 text-white border border-white/10 font-bold text-sm rounded-2xl transition-all flex items-center justify-center gap-2 cursor-pointer"
                               >
                                 {selectedLanguage === 'es' ? 'Crear una Cuenta' : 'Create an Account'}
@@ -1016,7 +1038,15 @@ export default function App() {
               )}
 
               {currentTab === 'pricing' && (
-                <PricingPlans currentLanguage={selectedLanguage} />
+                <PricingPlans 
+                  currentLanguage={selectedLanguage} 
+                  userTier={currentUserProfile?.tier || 'Free'}
+                  isLoggedIn={isLoggedIn}
+                  onOpenAuth={(mode) => {
+                    setAuthModalMode(mode || 'register');
+                    setIsAuthModalOpen(true);
+                  }}
+                />
               )}
 
               {currentTab === 'profile' && (
@@ -1247,6 +1277,7 @@ export default function App() {
         onClose={() => setIsAuthModalOpen(false)}
         currentLanguage={selectedLanguage}
         onAuthSuccess={handleAuthSuccess}
+        initialMode={authModalMode}
       />
 
       {/* Simple decorative footer */}
