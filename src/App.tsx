@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Header from './components/Header';
 import OrganizerDashboard from './components/OrganizerDashboard';
 import CreateRaffleModal from './components/CreateRaffleModal';
@@ -20,6 +20,7 @@ import AuthModal from './components/AuthModal';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsOfUse from './components/TermsOfUse';
 import { PayPalScriptProvider } from '@paypal/react-paypal-js';
+import { normalizeProfileName } from './utils/profileName';
 
 const INITIAL_RAFFLES: Raffle[] = [];
 
@@ -28,8 +29,12 @@ const INITIAL_NOTIFICATIONS: AppNotification[] = [];
 export default function App() {
   // Lang state, defaulting to 'es' (Spanish)
   const [selectedLanguage, setSelectedLanguage] = useState<Language>(() => {
-    const local = localStorage.getItem('rifasaas_lang');
-    return (local as Language) || 'es';
+    try {
+      const local = localStorage.getItem('rifasaas_lang');
+      return (local as Language) || 'es';
+    } catch {
+      return 'es';
+    }
   });
 
   const t = translations[selectedLanguage];
@@ -118,6 +123,19 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
+  const handleProfileNameSave = async (name: string) => {
+    const normalizedName = normalizeProfileName(name);
+    setCurrentUserProfile(prev => ({ ...prev, name: normalizedName }));
+
+    if (auth.currentUser) {
+      try {
+        await updateDoc(doc(db, 'users', auth.currentUser.uid), { name: normalizedName });
+      } catch (error) {
+        console.error('Error updating profile name:', error);
+      }
+    }
+  };
+
   const handleSignOut = async () => {
     try {
       await signOut(auth);
@@ -179,8 +197,14 @@ export default function App() {
 
   // Alerts inside app
   const [notifications, setNotifications] = useState<AppNotification[]>(() => {
-    const local = localStorage.getItem('rifasaas_notifs_v2');
-    return local ? JSON.parse(local) : INITIAL_NOTIFICATIONS;
+    try {
+      const local = localStorage.getItem('rifasaas_notifs_v2');
+      if (!local) return INITIAL_NOTIFICATIONS;
+      const parsed = JSON.parse(local);
+      return Array.isArray(parsed) ? parsed : INITIAL_NOTIFICATIONS;
+    } catch {
+      return INITIAL_NOTIFICATIONS;
+    }
   });
 
   // Current UX Navigation
@@ -210,11 +234,19 @@ export default function App() {
   // (Removed localStorage persistence for raffles)
 
   useEffect(() => {
-    localStorage.setItem('rifasaas_notifs_v2', JSON.stringify(notifications));
+    try {
+      localStorage.setItem('rifasaas_notifs_v2', JSON.stringify(notifications));
+    } catch {
+      // Ignore storage failures in restricted browser contexts.
+    }
   }, [notifications]);
 
   useEffect(() => {
-    localStorage.setItem('rifasaas_lang', selectedLanguage);
+    try {
+      localStorage.setItem('rifasaas_lang', selectedLanguage);
+    } catch {
+      // Ignore storage failures in restricted browser contexts.
+    }
   }, [selectedLanguage]);
 
   // Handle language mutation
@@ -522,9 +554,13 @@ export default function App() {
   };
 
   // Cumulative transactions catalog
-  const cumulativePurchases = raffles.reduce<TicketPurchase[]>((acc, active) => {
-    return [...acc, ...active.purchases];
-  }, []);
+  const cumulativePurchases = useMemo(() => {
+    return raffles.reduce<TicketPurchase[]>((acc, active) => {
+      return [...acc, ...active.purchases];
+    }, []);
+  }, [raffles]);
+
+  const winnerGallery = useMemo(() => rafflesWithWinners(raffles), [raffles]);
 
   const handleSelectRaffle = (raffle: Raffle) => {
     setSelectedRaffleId(raffle.id);
@@ -576,15 +612,15 @@ export default function App() {
     updateDoc(docRef, { status: newStatus }).catch(console.error);
   };
 
-  const unreadAlertsCount = notifications.filter(a => !a.read).length;
+  const unreadAlertsCount = useMemo(() => notifications.filter(a => !a.read).length, [notifications]);
 
   const metaEnv = (import.meta as any).env || {};
-  const paypalClientId = metaEnv.VITE_PAYPAL_ENV === 'live' 
-    ? metaEnv.VITE_PAYPAL_CLIENT_ID_LIVE 
-    : metaEnv.VITE_PAYPAL_CLIENT_ID_SANDBOX;
+  const paypalClientId = metaEnv.VITE_PAYPAL_ENV === 'live'
+    ? metaEnv.VITE_PAYPAL_CLIENT_ID_LIVE || 'test'
+    : metaEnv.VITE_PAYPAL_CLIENT_ID_SANDBOX || 'test';
 
   return (
-    <PayPalScriptProvider options={{ clientId: paypalClientId || 'test', currency: 'USD', intent: 'subscription', vault: true }}>
+    <PayPalScriptProvider options={{ clientId: paypalClientId, currency: 'USD', intent: 'subscription', vault: true }}>
       <div className="min-h-screen bg-gray-50/70 text-gray-900 font-sans flex flex-col pt-16">
       
       {/* Platform Navigation Header */}
@@ -993,7 +1029,7 @@ export default function App() {
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          {refflesWithWinners(raffles).map((winnerInfo, idx) => (
+                          {winnerGallery.map((winnerInfo, idx) => (
                             <div key={idx} className="bg-purple-50/50 p-4 rounded-2xl border border-purple-100/30 flex items-center gap-4">
                               <div className="w-11 h-11 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-extrabold shrink-0">
                                 #{winnerInfo.winnerTicket}
@@ -1006,7 +1042,7 @@ export default function App() {
                             </div>
                           ))}
                           
-                          {refflesWithWinners(raffles).length === 0 && (
+                          {winnerGallery.length === 0 && (
                             <div className="col-span-2 py-4 text-center">
                               <p className="text-xs text-gray-400 font-medium">No se han realizado sorteos todavía. ¡Ejecuta uno desde la pestaña SaaS Admin!</p>
                             </div>
@@ -1029,6 +1065,7 @@ export default function App() {
                     notifications={notifications}
                     onSelectRaffle={handleSelectRaffle}
                     onSignOut={() => setIsLoggedIn(false)}
+                    onProfileNameSave={handleProfileNameSave}
                     isLoggedIn={isLoggedIn}
                     onPayReservedTickets={(raffleId, ticketNumbers) => {
                       handlePayClick(raffleId, ticketNumbers);
@@ -1059,6 +1096,7 @@ export default function App() {
                   onSelectRaffle={handleSelectRaffle}
                   isLoggedIn={isLoggedIn}
                   onSignOut={handleSignOut}
+                  onProfileNameSave={handleProfileNameSave}
                 />
               )}
             </motion.div>
@@ -1303,7 +1341,7 @@ export default function App() {
 }
 
 // Internal helper to return clean drawn list
-function refflesWithWinners(raffles: Raffle[]) {
+function rafflesWithWinners(raffles: Raffle[]) {
   const drawn = raffles.filter(r => r.status === 'drawn' && r.winnerTicket);
   return drawn.map(d => ({
     name: d.name,

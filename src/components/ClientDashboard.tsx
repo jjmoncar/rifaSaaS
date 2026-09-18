@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { translations } from '../translations';
 import { Language, Raffle, TicketPurchase, UserProfile, AppNotification } from '../types';
 import { Edit, Ticket, Award, Bell, Shield, ChevronRight, Activity, Zap } from 'lucide-react';
+import { normalizeProfileName } from '../utils/profileName';
 
 interface ClientDashboardProps {
   currentLanguage: Language;
@@ -11,6 +12,7 @@ interface ClientDashboardProps {
   notifications: AppNotification[];
   onSelectRaffle: (raffle: Raffle) => void;
   onSignOut?: () => void;
+  onProfileNameSave?: (name: string) => void;
   isLoggedIn?: boolean;
   onPayReservedTickets?: (raffleId: string, ticketNumbers: number[]) => void;
 }
@@ -23,6 +25,7 @@ export default function ClientDashboard({
   notifications,
   onSelectRaffle,
   onSignOut,
+  onProfileNameSave,
   isLoggedIn,
   onPayReservedTickets
 }: ClientDashboardProps) {
@@ -31,6 +34,10 @@ export default function ClientDashboard({
   // States
   const [editedName, setEditedName] = useState(userProfile.name);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+
+  useEffect(() => {
+    setEditedName(userProfile.name);
+  }, [userProfile.name]);
 
   // Group purchases: combine 'Reserved' status tickets by raffle into a single row
   const processedPurchases: (TicketPurchase & { _originalTickets?: number[] })[] = [];
@@ -80,7 +87,9 @@ export default function ClientDashboard({
                 <button
                   id="profile-save-name-btn"
                   onClick={() => {
-                    userProfile.name = editedName;
+                    const nextName = normalizeProfileName(editedName);
+                    onProfileNameSave?.(nextName);
+                    setEditedName(nextName);
                     setIsEditingProfile(false);
                   }}
                   className="bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg cursor-pointer"
