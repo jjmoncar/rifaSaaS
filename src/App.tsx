@@ -21,6 +21,7 @@ import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsOfUse from './components/TermsOfUse';
 import { PayPalScriptProvider } from '@paypal/react-paypal-js';
 import { normalizeProfileName } from './utils/profileName';
+import { normalizeSelectedRaffleId } from './utils/raffleSelection';
 
 const INITIAL_RAFFLES: Raffle[] = [];
 
@@ -211,6 +212,17 @@ export default function App() {
   const [userRole, setUserRole] = useState<'organizer' | 'client'>('client');
   const [currentTab, setCurrentTab] = useState<string>('home');
   const [selectedRaffleId, setSelectedRaffleId] = useState<string | null>(null);
+  const selectedRaffle = useMemo(
+    () => raffles.find((raffle) => raffle.id === selectedRaffleId) ?? null,
+    [raffles, selectedRaffleId]
+  );
+
+  useEffect(() => {
+    const normalizedId = normalizeSelectedRaffleId(selectedRaffleId, raffles);
+    if (normalizedId !== selectedRaffleId) {
+      setSelectedRaffleId(normalizedId);
+    }
+  }, [raffles, selectedRaffleId]);
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingRaffle, setEditingRaffle] = useState<Raffle | null>(null);
@@ -701,7 +713,7 @@ export default function App() {
                     );
                   }
 
-                  return selectedRaffleId ? (
+                  return selectedRaffle ? (
                     <div>
                       <button
                         id="back-to-campaign-list"
@@ -712,7 +724,7 @@ export default function App() {
                       </button>
                       <TicketBoard
                         currentLanguage={selectedLanguage}
-                        raffle={raffles.find(r => r.id === selectedRaffleId)!}
+                        raffle={selectedRaffle}
                         onPayClick={handlePayClick}
                         onReserveClick={handleReserveClick}
                         onTriggerDraw={handleTriggerDraw}
@@ -726,6 +738,7 @@ export default function App() {
                     recentPurchases={cumulativePurchases}
                     userTier={currentUserProfile?.tier || 'Free'}
                     onCreateRaffleClick={() => {
+                      setSelectedRaffleId(null);
                       setEditingRaffle(null);
                       setIsCreateModalOpen(true);
                     }}
@@ -765,7 +778,7 @@ export default function App() {
             >
               {currentTab === 'home' && (
                 <>
-                  {selectedRaffleId ? (
+                  {selectedRaffle ? (
                     // Display ticket picking grid board
                     <div>
                       <button
@@ -777,7 +790,7 @@ export default function App() {
                       </button>
                       <TicketBoard
                         currentLanguage={selectedLanguage}
-                        raffle={raffles.find(r => r.id === selectedRaffleId)!}
+                        raffle={selectedRaffle}
                         onPayClick={handlePayClick}
                         onReserveClick={handleReserveClick}
                         onTriggerDraw={handleTriggerDraw}
@@ -1204,6 +1217,7 @@ export default function App() {
         onClose={() => {
           setIsCreateModalOpen(false);
           setEditingRaffle(null);
+          setSelectedRaffleId((prev) => normalizeSelectedRaffleId(prev, raffles));
         }}
         onSubmit={handleCreateRaffleSubmit}
         editingRaffle={editingRaffle}
